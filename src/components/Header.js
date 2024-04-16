@@ -1,21 +1,21 @@
 import { Menu, Typography, Search } from "antd";
 import { Drawer } from "antd";
 import { useState, useEffect } from "react";
-import MenuIcon from '@mui/icons-material/Menu';
+// import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import { useNavigate } from 'react-router-dom';
 import "./Header.css"
 import { Badge } from "antd";
-import { UserOutlined, ShoppingCartOutlined, TagOutlined, PlusOutlined, MinusOutlined } from "@ant-design/icons";
-import { Input, Card, Button, Image, Flex,Row,Col } from 'antd';
-import { Popover} from "antd";
-import { getAllCatergory, getAllChildCategory, getUserData, getTop4ProductsBySold, getCartItemByUID, getProductByID, increaseQuantityAndUpdateFirestore } from "../APi";
+import { UserOutlined, ShoppingCartOutlined, TagOutlined, PlusOutlined, MinusOutlined, BarsOutlined } from "@ant-design/icons";
+import { Input, Card, Button, Image, Flex, Row, Col } from 'antd';
+import { Popover } from "antd";
+import { getAllCatergory, getUserData, getCartItemByUID, getProductByID, increaseQuantityAndUpdateFirestore, getAllChildCategory } from "../APi";
 import { auth } from "../Services/firebase";
 import { signOut } from "firebase/auth";
 
 function Header() {
     const [openMenu, setOpenMenu] = useState(false);
-   
+
     return (
         <div className='appHeader'>
             <div
@@ -26,7 +26,7 @@ function Header() {
                 }}
                 className="menuIcon"
             >
-                <MenuIcon
+                <BarsOutlined
                     style={{
                         color: "black",
                         fontSize: 35,
@@ -60,8 +60,8 @@ function AppMenu({ isInLine = false }) {
         if (item.key == "") {
             navigate(`/${item.key}`)
         }
-        else { 
-            navigate(`/collection/${item.key}`, {state : {key: `${item.key}` }})
+        else {
+            navigate(`/collection/${item.key}`, { state: { key: `${item.key}` } })
         }
     }
     const { Search } = Input;
@@ -89,15 +89,16 @@ function AppMenu({ isInLine = false }) {
         fetchData();
     }, []);
 
-   
 
+
+    console.log("Category: ", category);
     const renderTabs = () => {
         return category.map(categoryItem => {
             const categoryDetailItem = categoryDetail.find(item => item.categoryId === categoryItem.id);
             const children = categoryDetailItem ? categoryDetailItem.details : [];
             return {
                 label: categoryItem.category_name,
-                key: categoryItem.id, 
+                key: categoryItem.id,
                 children: children.map(childItem => ({
                     label: childItem.detail_name,
                     key: childItem.id
@@ -105,21 +106,21 @@ function AppMenu({ isInLine = false }) {
             };
         });
     };
+    console.log("RenderTab: ", renderTabs);
     const menuItems = [
         {
             // icon: <HomeIcon />,
             label: "Trang chủ",
             key: "",
-            
-            
+
+
         },
         {
             // icon: <TagOutlined />,
             label: "Sale",
             key: "sale",
-        },  
-        
-        ...renderTabs()
+        },
+        // ...renderTabs()
     ];
     return (
         <div
@@ -132,7 +133,7 @@ function AppMenu({ isInLine = false }) {
             <Menu
                 onClick={onMenuClick}
                 mode={isInLine ? "inline" : "horizontal"}
-                items={ 
+                items={
                     menuItems
                 }
             >
@@ -166,10 +167,10 @@ function AppCart() {
         setOpen(newOpen);
     };
 
-
+    const uid = localStorage.getItem("uid");
     useEffect(() => {
         const fetchData = async () => {
-            const data = await getUserData();
+            const data = await getUserData(uid);
             setUserData(data);
         };
 
@@ -178,12 +179,7 @@ function AppCart() {
 
     const onMenuClick = (item) => {
         if (item.key == "logout") {
-            signOut(auth).then(() => {
-                localStorage.removeItem("uid")
-                navigate("/")
-            }).catch((error) => {
-                console.log(error);
-            });
+            navigate("/logout")
         }
         else {
 
@@ -194,7 +190,6 @@ function AppCart() {
 
     useEffect(() => {
         const checkLogin = () => {
-            const uid = localStorage.getItem("uid");
             if (uid !== null && uid !== "") {
                 setIsLogin(true);
             } else {
@@ -215,11 +210,11 @@ function AppCart() {
                     items={[
                         {
                             label: "Trang cá nhân",
-                            key: "profile"
+                            key: "user/profile"
                         },
                         {
                             label: "Đổi mật khẩu",
-                            key: "changepass"
+                            key: "user/change-pass"
                         },
                         {
                             label: "Đăng xuất",
@@ -228,23 +223,23 @@ function AppCart() {
                     ]}
                 />
             );
-        } else if (isLogin && userData.role == "ADMIN" || isLogin && userData.role == "MOD") {
+        } else if (isLogin && userData.role == "ADMIN" || isLogin && userData.role == "MANAGER") {
             return (
                 <Menu
                     onClick={onMenuClick}
                     mode="vertical"
                     items={[
                         {
+                            label: "Quản lí đơn hàng",
+                            key: "manage-page/manage-user"
+                        },
+                        {
                             label: "Trang cá nhân",
-                            key: "profile"
+                            key: "user/profile"
                         },
                         {
                             label: "Đổi mật khẩu",
-                            key: "changepass"
-                        },
-                        {
-                            label: "Quản lí đơn hàng",
-                            key: "product-management"
+                            key: "user/change-pass"
                         },
                         {
                             label: "Đăng xuất",
@@ -268,8 +263,8 @@ function AppCart() {
                 />
             );
         }
-    }; 
-    
+    };
+
     const [badgeopen, setBadgeOpen] = useState(false);
     const showDrawer = () => {
         setBadgeOpen(true);
@@ -301,7 +296,7 @@ function AppCart() {
         };
 
         fetchCartItem();
-    }, [cartItem]); 
+    }, [cartItem]);
     const fetchProductDataForCartItems = async () => {
         const updatedCartData = [];
         for (const item of cartData) {
@@ -323,29 +318,29 @@ function AppCart() {
     useEffect(() => {
         fetchProductDataForCartItems();
     }, []);
-    
+
     return (
         <div
             style={{
                 padding: 10
             }}
         >
-            <Badge count={cartFullData.length} onClick={showDrawer}>
+            <Badge count={cartFullData.length} onClick={showDrawer} >
                 <ShoppingCartOutlined
                     style={{
                         fontSize: 25
                     }}
                 />
             </Badge>
-            <Drawer 
-                title="Giỏ hàng" 
-                onClose={onClose} 
+            <Drawer
+                title="Giỏ hàng"
+                onClose={onClose}
                 open={badgeopen}
                 width={510}
                 footer={<CartFooter product={cartFullData} />}
             >
 
-                {cartFullData.map((cart, index) => (    
+                {cartFullData.map((cart, index) => (
                     <Card key={index} style={{ width: 470 }}>
                         <Card.Meta
                             avatar={
@@ -353,16 +348,16 @@ function AppCart() {
                                     preview={false}
                                     width={120}
                                     height={'90%'}
-                                        src={cart.productData.pr_images[0]}
+                                    src={cart.productData.pr_images[0]}
                                     style={{ objectFit: 'fill' }}
                                 />
                             }
-                                title={<strong>{cart.productData.pr_name}</strong>} // Thay thế bằng dữ liệu title thích hợp từ dữ liệu item
+                            title={<strong>{cart.productData.pr_name}</strong>} // Thay thế bằng dữ liệu title thích hợp từ dữ liệu item
                             description={<CardDescription product={cart} length={cartFullData.length} />}
                         />
                     </Card>
-            ))}
-            </Drawer>        
+                ))}
+            </Drawer>
 
             <Popover
                 content={
@@ -383,14 +378,14 @@ function AppCart() {
     )
 }
 
-function CardDescription({product, length}) {
+function CardDescription({ product, length }) {
     const ButtonGroup = Button.Group;
     const salePrice = parseInt((product.productData.pr_price - (product.productData.pr_price * product.productData.pr_sale) / 100))
-    
+
     const [count, setCount] = useState(product.quantity);
     const increase = async () => {
         setCount(count + 1);
-        await increaseQuantityAndUpdateFirestore('CSnQNSTddHV566sgdldSULWA9XN2','CoIrYgvFqLQKRre1Bcm2','Đen','S')
+        await increaseQuantityAndUpdateFirestore('CSnQNSTddHV566sgdldSULWA9XN2', 'CoIrYgvFqLQKRre1Bcm2', 'Đen', 'S')
         // await getCartItemByUID('CSnQNSTddHV566sgdldSULWA9XN2');
     };
     const decline = () => {
@@ -403,7 +398,7 @@ function CardDescription({product, length}) {
     return (
         <Flex vertical={'vertical'} gap={10}>
             <Row gutter={[16, 16]}>
-                <Col span={8} style={{ fontSize: 16, fontWeight:'bold' }}>
+                <Col span={8} style={{ fontSize: 16, fontWeight: 'bold' }}>
                     {product.pr_color} / {product.pr_size}
                 </Col>
                 <Col span={4} ></Col>
@@ -413,32 +408,32 @@ function CardDescription({product, length}) {
             <Row gutter={[16, 16]}>
                 <Col span={6} >
                     <ButtonGroup>
-                        <Button 
+                        <Button
                             onClick={decline}
                             icon={<MinusOutlined />}
                         />
-                        <Button 
+                        <Button
                             disabled
                             style={{
-                                 fontWeight:'bold'
+                                fontWeight: 'bold'
                             }}
                         >
                             {count}
                         </Button>
-                        <Button 
-                            onClick={increase} 
+                        <Button
+                            onClick={increase}
                             icon={<PlusOutlined />}
                         />
                     </ButtonGroup>
                 </Col>
                 <Col span={6} ></Col>
                 <Col span={5} ></Col>
-                <Col span={7}  flex={'auto'} >
-                    <Row style={{ fontSize: 15, fontWeight:'600' }}>
+                <Col span={7} flex={'auto'} >
+                    <Row style={{ fontSize: 15, fontWeight: '600' }}>
                         <span style={{
                             color: 'orangered'
                         }}>{salePrice * product.quantity + ",000đ"}</span>
-                        <span style={{ 
+                        <span style={{
                             textDecoration: 'line-through'
                         }}>{(product.productData.pr_price * product.quantity).toLocaleString() + ",000đ"}</span>
                     </Row>
@@ -454,18 +449,18 @@ function CartFooter({ product }) {
         let salePrice = (parseInt((item.productData.pr_price - (item.productData.pr_price * item.productData.pr_sale) / 100)) * item.quantity)
         totalPrice = totalPrice + salePrice
     }
-    return ( 
-        <Flex vertical = {'vertical'} gap = {10} >
+    return (
+        <Flex vertical={'vertical'} gap={10} >
             <Row>
                 <Col span={6} style={{ fontSize: 20, fontWeight: 'bold' }}>
-                    Tổng tiền: 
+                    Tổng tiền:
                 </Col>
                 <Col span={6} ></Col>
                 <Col span={6} ></Col>
                 <Col span={6} style={{
                     color: 'orangered',
                     fontWeight: 'bold',
-                    fontSize:20
+                    fontSize: 20
                 }}>
                     {totalPrice.toLocaleString() + ",000đ"}
                 </Col>

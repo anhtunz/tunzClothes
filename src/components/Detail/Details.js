@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import 'bootstrap/dist/css/bootstrap.css';
-import "react-multi-carousel/lib/styles.css";
 import "./Details.css"
-import { Layout, Flex} from 'antd';
+import { Layout, Flex } from 'antd';
 import { Carousel, Image, Typography, Tag, notification } from "antd";
 import { Col, Row, Button } from 'antd';
-import { MinusOutlined, PlusOutlined, QuestionOutlined  } from "@ant-design/icons";
+import { MinusOutlined, PlusOutlined, QuestionOutlined } from "@ant-design/icons";
 import ProductTabs from './ProductTab';
 import { useParams, useLocation } from 'react-router-dom';
 import { getProductByID } from '../../APi';
@@ -31,8 +30,8 @@ function DetailsClothes() {
     const productColorData = ['Trắng', 'Đen', 'Xám', 'Nâu'];
 
     const [product, setProduct] = useState({})
-    const[productImages, setProductImages] = useState(images)
-    const[productColor, setProductColor] = useState(productColorData)
+    const [productImages, setProductImages] = useState(images)
+    const [productColor, setProductColor] = useState(productColorData)
     useEffect(() => {
         const fetchData = async () => {
             const productData = await getProductByID(productID1);
@@ -53,7 +52,7 @@ function DetailsClothes() {
     console.log(product);
     console.log(product.id);
     const salePrice = parseInt((product.pr_price - (product.pr_price * product.pr_sale) / 100))
-    
+
 
     const { Sider, Content } = Layout;
     const contentStyle = {
@@ -72,13 +71,13 @@ function DetailsClothes() {
         width: '100%',
         maxWidth: '100%',
         margin: '5px',
-        backgroundColor:'white'
+        backgroundColor: 'white'
     };
 
-   
+
     const [selectedColorTag, setSelectedColorTag] = React.useState('');
     const [selectedSizeTag, setSelectedSizeTag] = React.useState('');
-    
+
     const handleColorChange = (tag) => {
         const isPreviouslySelected = selectedColorTag === tag;
 
@@ -107,12 +106,12 @@ function DetailsClothes() {
         api.open({
             message: 'Hướng dẫn chọn size',
             description:
-                    <Image
+                <Image
                     src="https://detmayduongngoc.com/upload_images/files/cach_tinh_size_quan_ao_bao_ho.jpg">
-                
+
                 </Image>,
             icon: (
-                < QuestionOutlined 
+                < QuestionOutlined
                     style={{
                         color: '#108ee9',
                     }}
@@ -135,10 +134,10 @@ function DetailsClothes() {
                     >
                         {
                             productImages.map(image => (
-                            // images.map(image => (
+                                // images.map(image => (
                                 <div
                                     style={{ width: "100%", height: "100%" }}
-                                    // onClick={() => handleImageClick(image)}
+                                // onClick={() => handleImageClick(image)}
                                 >
                                     <Image
                                         src={image}
@@ -153,7 +152,7 @@ function DetailsClothes() {
                         <Col
                             span={18}
                             style={{
-                                paddingLeft:'20px'
+                                paddingLeft: '20px'
                             }}
                         >
                             {/* Tên áo */}
@@ -163,7 +162,7 @@ function DetailsClothes() {
                                 {product.pr_name}
                             </Typography.Title >
                             {/* Mã + Tình Trạng */}
-                            <Flex justify="flex-start" align='flex-start' gap={'small'}> 
+                            <Flex justify="flex-start" align='flex-start' gap={'small'}>
                                 <Col>
                                     <Typography.Text>
                                         Mã sản phẩm : <strong>{productID}</strong>
@@ -181,7 +180,7 @@ function DetailsClothes() {
                                 </Col>
                             </Flex>
                             {/* Giá */}
-                            <Flex justify="flex-start" align='center' gap={100}> 
+                            <Flex justify="flex-start" align='center' gap={100}>
                                 <Col>
                                     <span style={{ fontSize: '15px', fontWeight: 'bold' }}>Giá: </span>
                                 </Col>
@@ -194,7 +193,7 @@ function DetailsClothes() {
                                             style={{
                                                 fontSize: '25px',
                                                 textDecoration: 'line-through',
-                                                marginLeft:'20px'
+                                                marginLeft: '20px'
                                             }}>
                                             {product.pr_price + ",000đ"}
                                         </span>
@@ -238,7 +237,7 @@ function DetailsClothes() {
                                         </Tag.CheckableTag>
                                     ))}
                                 </Col>
-                            </Flex> 
+                            </Flex>
                             {/* Thêm/Bớt số lượng */}
                             <Flex justify="flex-start" align='center' gap={60}>
                                 <Col>
@@ -267,7 +266,7 @@ function DetailsClothes() {
                             {/* Nút thêm/mua hàng */}
                             <Flex
                                 style={{
-                                    marginTop:'20px'
+                                    marginTop: '20px'
                                 }}
                                 justify="flex-start"
                                 align='center'
@@ -291,7 +290,7 @@ function DetailsClothes() {
                                 justify="flex-start"
                                 align='center'
                                 gap={60}
-                            >   
+                            >
                                 {contextHolder}
                                 <span
                                     style={{
@@ -318,10 +317,10 @@ function DetailsClothes() {
                 <span
                     style={{
                         fontSize: 30,
-                        fontWeight:'bold'
+                        fontWeight: 'bold'
                     }}
                 > Sản phẩm liên quan </span>
-            </Flex>                        
+            </Flex>
         </Layout>
     )
 }

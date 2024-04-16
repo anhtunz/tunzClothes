@@ -8,14 +8,14 @@ import {
 } from "firebase/firestore"
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBpbaUCpF-ubjMRxmjwj8hGk1ofFXEig3I",
-    authDomain: "tunztunzzclothing.firebaseapp.com",
-    projectId: "tunztunzzclothing",
-    storageBucket: "tunztunzzclothing.appspot.com",
-    messagingSenderId: "886513706233",
-    appId: "1:886513706233:web:31f60bbed0ee87aec62e28"
+    apiKey: process.env.REACT_APP_API_KEY,
+    authDomain: process.env.REACT_APP_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_APP_ID
 };
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-// export const storage = getStorage(app);
+export const storage = getStorage(app);

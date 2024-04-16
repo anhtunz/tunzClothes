@@ -95,7 +95,7 @@ export default function ClothesList({ title, products }) {
                       </Typography>
                     }
                   />
-                </Card>
+                </Card> 
               </Badge.Ribbon>
             </div>
           )
