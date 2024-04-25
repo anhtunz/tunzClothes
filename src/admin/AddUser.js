@@ -36,6 +36,7 @@ function AddUserPage() {
         const result = await addNewUser(user)
         if (result === true) {
             message.success('Thêm người dùng thành công')
+            form.resetFields();
         }
         else {
             message.error('Thêm thất bại')

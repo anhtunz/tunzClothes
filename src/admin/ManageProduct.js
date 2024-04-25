@@ -124,7 +124,13 @@ function ManageProductPage() {
             return description;
         };
 
-        return <div>{shortenDescription(description, 50)}</div>;
+        const renderHTML = (htmlContent) => {
+            return { __html: htmlContent };
+        };
+
+        return (
+            <div dangerouslySetInnerHTML={renderHTML(shortenDescription(description, 50))} />
+        );
     };
 
     const columns = [
@@ -148,7 +154,7 @@ function ManageProductPage() {
                     dataLength={images.length}
                 >
                     {images?.map(image => (
-                        <Image src={image} alt="Product Image" height={100} width={100} />
+                        <Image key={image} src={image} alt="Product Image" height={100} width={100} />
                     ))}
                 </InfiniteScroll>
             )

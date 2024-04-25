@@ -7,8 +7,8 @@ import {
 import { db, auth } from '../../Services/firebase'
 import { addDoc, collection } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import {toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; 
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 import Notification from '../toast';
 
@@ -32,7 +32,7 @@ function SignUpForm() {
         if (pass.length < 6) {
             console.log("Mật khẩu phải có ít nhất 6 kí tự");
             setShowNotification(true)
-            toast('Mật khẩu phải có ít nhất 6 kí tự', { type: errorType });    
+            toast('Mật khẩu phải có ít nhất 6 kí tự', { type: errorType });
             return;
         }
 
@@ -46,7 +46,7 @@ function SignUpForm() {
         const today = new Date();
         navigate("/login", { state: { success: true } });
         // Tiến hành thêm vào cơ sở dữ liệu và đăng ký người dùng
-        try {           
+        try {
             // Đăng ký người dùng
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             const user = userCredential.user;
@@ -85,10 +85,10 @@ function SignUpForm() {
     }
     return (
         <form className='d-flex flex-column justify-content-center h-custom-3 w-75 pt-4' onSubmit={handleSignUp}>
-            <h3 className="fw-normal mb-3 ps-5 pb-3" style={{ letterSpacing: '1px' }}>Sign Up</h3>
+            <h3 className="fw-normal mb-3 ps-5 pb-3" style={{ letterSpacing: '1px' }}>Đăng kí tài khoản</h3>
             <MDBInput
                 wrapperClass='mb-4 mx-5 w-100'
-                label='Email address'
+                label='Email '
                 id='email' type='text'
                 size="lg" autoFocus
                 name='email'
@@ -97,7 +97,7 @@ function SignUpForm() {
             />
             <MDBInput
                 wrapperClass='mb-4 mx-5 w-100'
-                label='Password' id='password'
+                label='Mật khẩu' id='password'
                 type='password'
                 size="lg"
                 value={pass}
@@ -105,17 +105,17 @@ function SignUpForm() {
             />
             <MDBInput
                 wrapperClass='mb-4 mx-5 w-100'
-                label='Confirm Password'
+                label='Xác nhận mật khẩu'
                 id='comfirmpassword'
                 type='password'
                 size="lg"
                 value={confirmPass}
                 onChange={(e) => setConfirmPass(e.target.value)}
             />
-            <MDBBtn className="mb-4 px-5 mx-5 w-100" color='info' size='lg' >SignUp</MDBBtn>
-            {showNotification && <Notification position= "top-left"/>}
-            <p className="small mb-5 pb-lg-3 ms-5"><a className="text-muted">Forgot password?</a></p>
-            <p className='ms-5'>Have an account? <a href="/login" className="link-info">Login</a></p>
+            <MDBBtn className="mb-4 px-5 mx-5 w-100" color='info' size='lg' >Đăng kí</MDBBtn>
+            {showNotification && <Notification position="top-left" />}
+            {/* <p className="small mb-5 pb-lg-3 ms-5"><a className="text-muted">Forgot password?</a></p> */}
+            <p className='ms-5'>Đã có tài khoản? <a href="/login" className="link-info">Đăng nhập</a></p>
         </form>
     )
 }

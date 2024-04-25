@@ -106,7 +106,7 @@ function ChangeProfilePage() {
                             icon={<LockOutlined />}
                             onClick={() => { navigate("/user/change-pass") }}
                         > Đổi mật khẩu</Button>
-                        <Button type='primary' block icon={<HistoryOutlined />}> Lịch sử mua hàng</Button>
+                        <Button type='primary' block icon={<HistoryOutlined />} onClick={() => { navigate("/user/history-purchase") }}> Lịch sử mua hàng</Button>
                         <Button
                             type='primary'
                             block

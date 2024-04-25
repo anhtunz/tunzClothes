@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
@@ -13,6 +13,7 @@ import {
 import { Layout, Menu, Button, theme } from 'antd';
 import { Outlet, Links } from 'react-router';
 import { useNavigate } from 'react-router-dom';
+import { getUserData } from '../APi';
 
 const { Header, Sider, Content } = Layout;
 
@@ -25,6 +26,8 @@ const AdminLayout = () => {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
 
+    const [userData, setUserData] = useState(null)
+
     const handleOnclickMenu = (item) => {
         if (item.key == "") {
             navigate(`/${item.key}`)
@@ -34,10 +37,20 @@ const AdminLayout = () => {
             navigate(`/manage-page/${item.key}`)
         }
     }
-    return (
-        <Layout>
-            <Sider trigger={null} collapsible collapsed={collapsed} width={250}>
-                <div className="demo-logo-vertical" />
+
+    const uid = localStorage.getItem("uid");
+    useEffect(() => {
+        const fetchData = async () => {
+            const data = await getUserData(uid);
+            setUserData(data);
+        };
+
+        fetchData();
+    }, []);
+
+    const renderMenu = () => {
+        if (userData?.role === "ADMIN") {
+            return (
                 <Menu
                     theme="dark"
                     mode="inline"
@@ -52,14 +65,9 @@ const AdminLayout = () => {
                             label: "Trang chủ"
                         },
                         {
-                            key: '1',
+                            key: 'manage-order',
                             icon: <PayCircleOutlined />,
                             label: 'Quản lí đơn hàng',
-                        },
-                        {
-                            key: '2',
-                            icon: <MessageOutlined />,
-                            label: 'Tin nhắn khách hàng',
                         },
                         {
                             key: '3',
@@ -97,6 +105,38 @@ const AdminLayout = () => {
 
                     ]}
                 />
+            )
+        } else {
+            return (
+                <Menu
+                    theme="dark"
+                    mode="inline"
+                    onClick={handleOnclickMenu}
+                    defaultSelectedKeys={selectedKey}
+
+                    style={{ marginTop: '50px' }}
+                    items={[
+                        {
+                            key: '',
+                            icon: <HomeOutlined />,
+                            label: "Trang chủ"
+                        },
+                        {
+                            key: 'manage-order',
+                            icon: <PayCircleOutlined />,
+                            label: 'Quản lí đơn hàng',
+                        },
+                    ]}
+                />
+            )
+        }
+    }
+
+    return (
+        <Layout>
+            <Sider trigger={null} collapsible collapsed={collapsed} width={250}>
+                <div className="demo-logo-vertical" />
+                {renderMenu()}
             </Sider>
             <Layout>
                 <Header

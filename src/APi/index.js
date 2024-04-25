@@ -1,11 +1,12 @@
 import { db, auth } from "../Services/firebase";
-import { collection, getDocs, where, query, doc, getDoc, orderBy, limit, updateDoc, onSnapshot, addDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, where, query, doc, getDoc, orderBy, limit, updateDoc, onSnapshot, addDoc, deleteDoc, increment, arrayUnion } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updatePassword, updateEmail } from "firebase/auth";
 /**
  * Lấy thông tin người dùng đăng nhập
  * @returns 
  */
 export const getUserData = async (uid) => {
+    console.log("Đã gọi hàm getUserData! ");
     // const uid = localStorage.getItem("uid");
     if (uid) {
         try {
@@ -32,6 +33,7 @@ export const getUserData = async (uid) => {
  * @returns 
  */
 export const getAllCatergory = async () => {
+    console.log("Đã gọi hàm getAllCatergory! ");
     try {
         const categoryQuerry = query(collection(db, "category"))
         console.log('Câu truy vấn:', categoryQuerry.path);
@@ -57,6 +59,7 @@ export const getAllCatergory = async () => {
  * @returns 
  */
 export const getAllChildCategory = async (parentCategory) => {
+    console.log("Đã gọi hàm getAllChildCategory! ");
     try {
         const categoryRef = collection(db, 'category-detail');
         const q = query(categoryRef, where('detail_category', "==", parentCategory));
@@ -81,6 +84,7 @@ export const getAllChildCategory = async (parentCategory) => {
  * @returns 
  */
 export const getAllProductsByCategoryID = async (categoryId) => {
+    console.log("Đã gọi hàm getAllProductsByCategoryID! ");
     try {
         const productCollectionRef = collection(db, 'products');
         const q = query(productCollectionRef, where('category_detail', '==', categoryId));
@@ -106,6 +110,7 @@ export const getAllProductsByCategoryID = async (categoryId) => {
  */
 
 export const getAllProductsSortedAZ = async () => {
+    console.log("Đã gọi hàm getAllProductsSortedAZ! ");
     try {
         const productCollectionRef = collection(db, 'products');
         const q = query(productCollectionRef, orderBy('pr_name', 'asc'));
@@ -130,6 +135,7 @@ export const getAllProductsSortedAZ = async () => {
  * @returns 
  */
 export const getAllProductsSortedZA = async () => {
+    console.log("Đã gọi hàm getAllProductsSortedZA! ");
     try {
         const productCollectionRef = collection(db, 'products');
         const q = query(productCollectionRef, orderBy('pr_name', 'desc'));
@@ -153,6 +159,7 @@ export const getAllProductsSortedZA = async () => {
  * @returns 
  */
 export const getTop4ProductsBySold = async () => {
+    console.log("Đã gọi hàm getTop4ProductsBySold! ");
     try {
         const productCollectionRef = collection(db, 'products');
         const q = query(productCollectionRef, orderBy('pr_sold', 'desc'), limit(8));
@@ -177,6 +184,7 @@ export const getTop4ProductsBySold = async () => {
  * @returns 
  */
 export const getTop4ProductsByID = async (categoryID) => {
+    console.log("Đã gọi hàm getTop4ProductsByID! ");
     try {
         const productCollectionRef = collection(db, 'products');
         const q = query(productCollectionRef, where('category_detail', "==", categoryID), limit(4));
@@ -194,6 +202,29 @@ export const getTop4ProductsByID = async (categoryID) => {
         return [];
     }
 };
+/**
+ * Lấy ra tất cả sản phẩm đang sale trog cửa hàng
+ * @returns 
+ */
+export const getAllProductsOnSale = async () => {
+    console.log("Đã gọi hàm getProductsOnSale! ");
+    try {
+        const productCollectionRef = collection(db, 'products');
+        const q = query(productCollectionRef, where('pr_sale', '>', 0));
+        const querySnapshot = await getDocs(q);
+
+        const products = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        return products;
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu sản phẩm đang giảm giá:', error);
+        return [];
+    }
+};
+
 
 /**
  * Lấy thông tin chi tiết về một thể loại
@@ -201,6 +232,7 @@ export const getTop4ProductsByID = async (categoryID) => {
  * @returns 
  */
 export const getCategoryDetailData = async (categoryID) => {
+    console.log("Đã gọi hàm getCategoryDetailData! ");
     try {
         const userQuery = doc(db, "category-detail", categoryID);
         const querySnapshot = await getDoc(userQuery);
@@ -216,12 +248,14 @@ export const getCategoryDetailData = async (categoryID) => {
     }
 }
 
+
 /**
  * Lấy thông tin sản phẩm theo ID
  * @param {*} productId 
  * @returns 
  */
 export const getProductByID = async (productId) => {
+    console.log("Đã gọi hàm getProductByID! ");
     try {
         const productQuery = doc(db, 'products', productId);
         const querySnapshot = await getDoc(productQuery);
@@ -240,24 +274,77 @@ export const getProductByID = async (productId) => {
 }
 
 /**
+ * Thêm sản phẩm mới vào giỏ hàng của người dùng
+ * @param {*} uid 
+ * @param {*} newItem 
+ */
+export const addItemToCart = async (uid, newItem) => {
+    console.log("Đã gọi hàm addItemToCart!");
+    try {
+        // Tìm kiếm phần tử trong bảng cart có uid bằng uid được truyền vào
+        const cartQuery = query(collection(db, 'cart'), where('uid', '==', uid));
+        const querySnapshot = await getDocs(cartQuery);
+
+        if (!querySnapshot.empty) {
+            // Nếu tìm thấy phần tử có uid tương ứng, kiểm tra xem sản phẩm mới đã tồn tại trong mảng items hay chưa
+            const cartDocRef = querySnapshot.docs[0].ref;
+            const cartDocSnapshot = await getDoc(cartDocRef);
+
+            if (cartDocSnapshot.exists()) {
+                const cartData = cartDocSnapshot.data();
+                const existingItemIndex = cartData.items.findIndex(item => item.id === newItem.id && item.size === newItem.size && item.color === newItem.color);
+
+                if (existingItemIndex !== -1) {
+                    // Nếu sản phẩm đã tồn tại trong mảng items, chỉ cần tăng chỉ số quantity lên 1
+                    const updatedItems = [...cartData.items];
+                    updatedItems[existingItemIndex].quantity++;
+                    await updateDoc(cartDocRef, { items: updatedItems });
+                    console.log('Đã cập nhật số lượng của sản phẩm trong giỏ hàng.');
+                    return true;
+                } else {
+                    // Nếu sản phẩm chưa tồn tại trong mảng items, thêm sản phẩm vào mảng items
+                    const updatedItems = [...cartData.items, newItem];
+                    await updateDoc(cartDocRef, { items: updatedItems });
+                    console.log('Đã thêm một sản phẩm mới vào giỏ hàng.');
+                    return true;
+                }
+            } else {
+                console.log('Không tìm thấy phần tử trong bảng cart có uid bằng', uid);
+                return false;
+            }
+        } else {
+            // Nếu không tìm thấy phần tử với uid tương ứng, tạo một phần tử mới và thêm vào mảng items
+            const newCartData = { uid: uid, items: [newItem] };
+            await addDoc(collection(db, 'cart'), newCartData);
+            console.log('Đã tạo một giỏ hàng mới và thêm sản phẩm vào giỏ hàng.');
+            return true;
+        }
+    } catch (error) {
+        console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', error);
+        return false;
+    }
+};
+
+/**
  * Lấy giỏ hàng của người dùng theo uid
  * @param {*} uid 
  * @returns 
  */
 export const getCartItemByUID = async (uid) => {
+    console.log("Đã gọi hàm getCartItemByUID! ");
     try {
-        const cartQuery = doc(db, 'cart ', uid);
-        const querySnapshot = await getDoc(cartQuery);
-        if (querySnapshot.exists()) { // Kiểm tra xem document có tồn tại không
-            const cartData = querySnapshot.data();
-            const cartID = querySnapshot.id;
+        const cartQuery = query(collection(db, 'cart'), where('uid', '==', uid));
+        const querySnapshot = await getDocs(cartQuery);
+        if (!querySnapshot.empty) {
+            const cartData = querySnapshot.docs[0].data();
+            const cartID = querySnapshot.docs[0].id;
             return { ...cartData, id: cartID };
         } else {
-            console.log("Phần tử con rỗng!!!!");
+            console.log("Không tìm thấy phần tử trong bảng cart có uid bằng", uid);
             return null;
         }
     } catch (error) {
-        console.error('Error fetching product by ID:', error);
+        console.error('Lỗi khi tìm kiếm phần tử trong bảng cart:', error);
         throw error;
     }
 };
@@ -269,32 +356,72 @@ export const getCartItemByUID = async (uid) => {
  * @param {*} pr_color 
  * @param {*} pr_size 
  */
-export const increaseQuantityAndUpdateFirestore = async (uid, pr_id, pr_color, pr_size) => {
+export const increaseQuantityProductInCart = async (uid, pr_id, pr_color, pr_size) => {
+    console.log("Đã gọi hàm increaseQuantityProductInCart! ");
     try {
-        // Lấy dữ liệu của giỏ hàng từ Firestore
-        const cartDocRef = doc(db, 'cart ', uid); // Thay 'user_id_or_cart_id' bằng ID của giỏ hàng hoặc ID của người dùng
+        const cartQuery = query(collection(db, 'cart'), where('uid', '==', uid)); // Tạo truy vấn lọc
 
-        const cartDocSnapshot = await getDoc(cartDocRef);
-        if (cartDocSnapshot.exists()) {
-            const cartData = cartDocSnapshot.data();
+        const cartQuerySnapshot = await getDocs(cartQuery);
+        if (!cartQuerySnapshot.empty) {
+            const cartDocRef = cartQuerySnapshot.docs[0].ref; // Lấy tham chiếu của tài liệu trong bảng "cart"
 
-            // Tìm kiếm phần tử trong mảng items dựa trên pr_id, pr_color, và pr_size
-            const itemIndex = cartData.items.findIndex(item => item.pr_id === pr_id && item.pr_color === pr_color && item.pr_size === pr_size);
-
-            // Nếu tìm thấy phần tử
-            if (itemIndex !== -1) {
-                // Tăng số lượng lên 1
-                cartData.items[itemIndex].quantity++;
-
-                // Cập nhật giá trị quantity của tài liệu đó trong Firestore
-                await updateDoc(cartDocRef, { items: cartData.items });
-
-                console.log(`Số lượng của sản phẩm ${pr_id} (${pr_color}, ${pr_size}) đã được cập nhật.`);
+            const cartDocSnapshot = await getDoc(cartDocRef);
+            if (cartDocSnapshot.exists()) {
+                const cartData = cartDocSnapshot.data();
+                const itemIndex = cartData.items.findIndex(item => item.id === pr_id && item.color === pr_color && item.size === pr_size);
+                if (itemIndex !== -1) {
+                    cartData.items[itemIndex].quantity++;
+                    await updateDoc(cartDocRef, { items: cartData.items });
+                    console.log(`Số lượng của sản phẩm ${pr_id} (${pr_color}, ${pr_size}) đã được cập nhật.`);
+                } else {
+                    console.log(`Không tìm thấy sản phẩm ${pr_id} (${pr_color}, ${pr_size}) trong giỏ hàng.`);
+                }
             } else {
-                console.log(`Không tìm thấy sản phẩm ${pr_id} (${pr_color}, ${pr_size}) trong giỏ hàng.`);
+                console.log('Giỏ hàng không tồn tại.');
             }
         } else {
-            console.log('Giỏ hàng không tồn tại.');
+            console.log('Không tìm thấy giỏ hàng cho người dùng có uid là', uid);
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật dữ liệu trong Firestore:', error);
+    }
+};
+
+/**
+ * Giảm số lượng của phầm tử trong cart
+ * @param {*} uid 
+ * @param {*} pr_id 
+ * @param {*} pr_color 
+ * @param {*} pr_size 
+ */
+export const decreaseQuantityProductInCart = async (uid, pr_id, pr_color, pr_size) => {
+    console.log("Đã gọi hàm decreaseQuantityProductInCart! ");
+    // console.log("prID", pr_id);
+    // console.log("prcolor", pr_color);
+    // console.log("prsize", pr_size);
+    try {
+        const cartQuery = query(collection(db, 'cart'), where('uid', '==', uid)); // Tạo truy vấn lọc
+
+        const cartQuerySnapshot = await getDocs(cartQuery);
+        if (!cartQuerySnapshot.empty) {
+            const cartDocRef = cartQuerySnapshot.docs[0].ref; // Lấy tham chiếu của tài liệu trong bảng "cart"
+
+            const cartDocSnapshot = await getDoc(cartDocRef);
+            if (cartDocSnapshot.exists()) {
+                const cartData = cartDocSnapshot.data();
+                const itemIndex = cartData.items.findIndex(item => item.id === pr_id && item.color === pr_color && item.size === pr_size);
+                if (itemIndex !== -1) {
+                    cartData.items[itemIndex].quantity--;
+                    await updateDoc(cartDocRef, { items: cartData.items });
+                    console.log(`Số lượng của sản phẩm ${pr_id} (${pr_color}, ${pr_size}) đã được cập nhật.`);
+                } else {
+                    console.log(`Không tìm thấy sản phẩm ${pr_id} (${pr_color}, ${pr_size}) trong giỏ hàng.`);
+                }
+            } else {
+                console.log('Giỏ hàng không tồn tại.');
+            }
+        } else {
+            console.log('Không tìm thấy giỏ hàng cho người dùng có uid là', uid);
         }
     } catch (error) {
         console.error('Lỗi khi cập nhật dữ liệu trong Firestore:', error);
@@ -302,30 +429,32 @@ export const increaseQuantityAndUpdateFirestore = async (uid, pr_id, pr_color, p
 };
 
 
+export const deleteProductInCart = async (uid, pr_id, pr_color, pr_size) => {
+    console.log("Đã gọi hàm deleteProductInCart! ");
+    try {
+        const cartQuery = query(collection(db, 'cart'), where('uid', '==', uid)); // Tạo truy vấn lọc
+        const cartQuerySnapshot = await getDocs(cartQuery);
 
-/**
- * Lắng 
- */
-// export const getCartItemRealtimeByUID = (uid, callback) => {
-//     try {
-//         const cartQuery = doc(db, 'cart ', uid);
-//         return onSnapshot(cartQuery, (snapshot) => {
-//             if (snapshot.exists()) {
-//                 const cartData = snapshot.data();
-//                 const cartID = snapshot.id;
-//                 const updatedCartData = { ...cartData, id: cartID };
-//                 callback(updatedCartData);
-//             } else {
-//                 console.log("Phần tử con rỗng!!!!");
-//                 callback(null);
-//             }
-//         });
-//     } catch (error) {
-//         console.error('Error fetching product by ID:', error);
-//         throw error;
-//     }
-// };
+        if (!cartQuerySnapshot.empty) {
+            const cartDocRef = cartQuerySnapshot.docs[0].ref; // Lấy tham chiếu của tài liệu trong bảng "cart"
 
+            const cartDocSnapshot = await getDoc(cartDocRef);
+            if (cartDocSnapshot.exists()) {
+                const cartData = cartDocSnapshot.data();
+                const updatedItems = cartData.items.filter(item => !(item.id === pr_id && item.color === pr_color && item.size === pr_size));
+
+                await updateDoc(cartDocRef, { items: updatedItems });
+                console.log(`Sản phẩm ${pr_id} (${pr_color}, ${pr_size}) đã được xóa khỏi giỏ hàng.`);
+            } else {
+                console.log('Giỏ hàng không tồn tại.');
+            }
+        } else {
+            console.log('Không tìm thấy giỏ hàng cho người dùng có uid là', uid);
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật dữ liệu trong Firestore:', error);
+    }
+};
 
 /**
  * Cập nhật trường image trong table users
@@ -334,6 +463,7 @@ export const increaseQuantityAndUpdateFirestore = async (uid, pr_id, pr_color, p
  * @returns 
  */
 export const updateProfileImage = async (uid, image) => {
+    console.log("Đã gọi hàm updateProfileImage! ");
     if (uid && image) {
         try {
             const userQuery = query(collection(db, 'users'), where('uid', '==', uid));
@@ -364,6 +494,7 @@ export const updateProfileImage = async (uid, image) => {
  * @returns 
  */
 export const updatePasswordFirestore = async (uid, newPassword) => {
+    console.log("Đã gọi hàm updatePasswordFirestore! ");
     if (uid && newPassword) {
         try {
             const userQuery = query(collection(db, 'users'), where('uid', '==', uid));
@@ -393,8 +524,8 @@ export const updatePasswordFirestore = async (uid, newPassword) => {
  * @returns 
  */
 export const changeUserPassword = async (password) => {
+    console.log("Đã gọi hàm changeUserPassword! ");
     const user = auth.currentUser;
-    console.log(user.uid);
     try {
         await updatePassword(user, password);
         await updatePasswordFirestore(user.uid, password);
@@ -406,6 +537,273 @@ export const changeUserPassword = async (password) => {
         // Nếu có lỗi, xử lý và thông báo lỗi
         console.error('Lỗi khi thay đổi mật khẩu:', error.message);
         // Bạn có thể sử dụng một thư viện thông báo như Ant Design để hiển thị thông báo
+        return false;
+    }
+}
+
+
+
+/**
+ * Tăng số lượt bán cho sản phẩm
+ * @param {*} productId 
+ * @returns 
+ */
+export const increaseSoldCountOfProduct = async (productId) => {
+    try {
+        const productDocRef = doc(db, "products", productId);
+        await updateDoc(productDocRef, {
+            pr_sold: increment(1)
+        });
+        console.log("Đã tăng giá trị pr_sold cho sản phẩm có id", productId);
+        return true;
+    } catch (error) {
+        console.error("Lỗi khi tăng giá trị pr_sold cho sản phẩm", error.message);
+        return false;
+    }
+}
+
+/**
+ * Lưu đơn hàng người dùng đặt
+ * @param {*} uid 
+ * @param {*} purchaseHistory 
+ * @returns 
+ */
+export const addPurchaseHistoryUsers = async (uid, purchaseHistory) => {
+    console.log("Đã gọi hàm addPurchaseHistoryUsers! ");
+    try {
+        // Kiểm tra xem có bill nào của user có uid tương tự không
+        const billQuery = query(collection(db, "bills"), where("uid", "==", uid));
+        const billSnapshot = await getDocs(billQuery);
+
+        if (!billSnapshot.empty) {
+            // Nếu tồn tại bill, thêm purchase history vào bill đó
+            const billDoc = billSnapshot.docs[0];
+            await updateDoc(billDoc.ref, {
+                purchase_history: arrayUnion(purchaseHistory)
+            });
+            console.log("Thêm purchase history vào bill thành công");
+        } else {
+            // Nếu không tồn tại bill, tạo mới bill và thêm purchase history vào
+            const newBill = {
+                uid: uid,
+                purchase_history: [purchaseHistory]
+            };
+            await addDoc(collection(db, "bills"), newBill);
+            console.log("Tạo mới bill và thêm purchase history thành công");
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Lỗi khi thêm purchase history vào bill", error.message);
+        return false;
+    }
+};
+
+/**
+ * Lấy ra lịch sử mua hàng của người dùng
+ * @param {*} uid 
+ * @returns 
+ */
+export const getPurchaseHistory = async (uid) => {
+    console.log("Đã gọi hàm getPurchaseHistory! ");
+    try {
+        const billQuery = query(collection(db, 'bills'), where('uid', '==', uid));
+        const querySnapshot = await getDocs(billQuery);
+        if (!querySnapshot.empty) { // Kiểm tra xem có tài liệu nào phù hợp không
+            const billData = querySnapshot.docs[0].data(); // Lấy dữ liệu từ tài liệu đầu tiên
+            const billId = querySnapshot.docs[0].id; // Lấy id của tài liệu đầu tiên
+            return { ...billData, id: billId };
+        } else {
+            console.log("Không tìm thấy phần tử trong bảng bills có uid bằng", uid);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching product by ID:', error);
+        throw error;
+    }
+}
+
+/**
+ * Cập nhật số lượt bán và đánh giá của sản phẩm từ người dùng
+ * @param {*} product 
+ * @returns 
+ */
+export const updateProductbyUser = async (product) => {
+    console.log("Đã gọi hàm updateProductbyUser");
+    try {
+        const productDocRef = doc(db, "products", product.id);
+        const productDocSnap = await getDoc(productDocRef);
+
+        if (productDocSnap.exists()) {
+            await updateDoc(productDocRef, {
+                pr_sold: product.pr_sold,
+                pr_rating: product.pr_rating,
+            });
+            console.log('Đã cập nhật thông tin cho sản phẩm có id:', product.id);
+            return true;
+        } else {
+            console.error('Không tìm thấy sản phẩm có id:', product.id);
+            return false;
+        }
+    } catch (error) {
+        console.error('Cập nhật thông tin sản phẩm không thành công:', error.message);
+        return false;
+    }
+}
+
+
+export const getCommentItemByproductID = async (productID) => {
+    console.log("Đã gọi hàm getCommentItemByproductID! ");
+    try {
+        const commentsQuery = query(collection(db, 'comments'), where('pr_id', '==', productID));
+        const querySnapshot = await getDocs(commentsQuery);
+        if (!querySnapshot.empty) {
+            const commentsData = querySnapshot.docs[0].data();
+            const commentsID = querySnapshot.docs[0].id;
+            return { ...commentsData, id: commentsID };
+        } else {
+            console.log("Không tìm thấy phần tử trong bảng comments có productID bằng", productID);
+            return null;
+        }
+    } catch (error) {
+        console.error('Lỗi khi tìm kiếm phần tử trong bảng comments:', error);
+        throw error;
+    }
+};
+
+
+/**
+ * Thêm đánh giá của người dùng về sản phẩm
+ * @param {*} productId 
+ * @param {*} uid 
+ * @param {*} rate 
+ * @param {*} evaluate 
+ * @returns 
+ */
+export const addCommentbyProductID = async (productId, uid, rate, evaluate) => {
+    console.log("Đã gọi hàm addCommentbyProductID");
+    try {
+        // Kiểm tra xem có tồn tại phần tử trong bảng comments có pr_id bằng productId không
+        const commentsQuery = query(collection(db, "comments"), where("pr_id", "==", productId));
+        const commentsSnapshot = await getDocs(commentsQuery);
+
+        if (!commentsSnapshot.empty) {
+            // Nếu có, lặp qua các phần tử và cập nhật giá trị
+            commentsSnapshot.forEach(async (doc) => {
+                const commentDocRef = doc(db, "comments", doc.id);
+                await updateDoc(commentDocRef, {
+                    details: [
+                        ...doc.data().details,
+                        { uid, rate, evaluate }
+                    ]
+                });
+                console.log("Đã cập nhật đánh giá cho sản phẩm có id:", productId);
+            });
+        } else {
+            // Nếu không, tạo một phần tử mới trong bảng comments
+            const newCommentRef = await addDoc(collection(db, "comments"), {
+                pr_id: productId,
+                details: [{ uid, rate, evaluate }]
+            });
+            console.log("Đã tạo mới đánh giá cho sản phẩm có id:", productId, "với id:", newCommentRef.id);
+        }
+        return true;
+    } catch (error) {
+        console.error("Lỗi khi lưu đánh giá:", error.message);
+        return false;
+    }
+};
+
+/**
+ * Cập nhật bill khi người dùng đánh giá xong
+ * @param {*} uid 
+ * @param {*} newPurchaseHistory 
+ * @returns 
+ */
+export const updateBillWithPurchaseHistory = async (uid, newPurchaseHistory) => {
+    try {
+        const billsCollectionRef = query(collection(db, "bills"), where("uid", "==", uid));
+        const querySnapshot = await getDocs(billsCollectionRef);
+
+        querySnapshot.forEach(async (doc) => {
+            const updatedBillData = {
+                ...doc.data(),
+                purchase_history: newPurchaseHistory.purchase_history
+            };
+
+            await updateDoc(doc.ref, updatedBillData);
+            console.log("Đã cập nhật bill có uid:", uid);
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Lỗi khi cập nhật bill:", error);
+        return false;
+    }
+}
+
+
+
+export const getUnprocessedBills = async () => {
+    try {
+        const billQuery = collection(db, 'bills');
+        const querySnapshot = await getDocs(billQuery);
+
+        const bills = [];
+
+        querySnapshot.forEach(doc => {
+            const billData = doc.data();
+            // Duyệt qua mảng purchase_history của mỗi hóa đơn
+            // billData.purchase_history.forEach(history => {
+            //     if (history.status === false) {
+            //         billsWithStatusFalse.push({
+            //             uid: billData.uid,
+            //             ...billData
+            //         });
+            //         // Nếu phần tử trong purchase_history có status = false, thêm hóa đơn vào mảng kết quả
+            //     }
+            // });
+            // console.log(111, billData);
+
+            const billsss = billData.purchase_history
+                .filter(purchase => purchase.status === false)
+                .map(purchase => ({ ...purchase, uid: billData.uid }));
+
+            bills.push(...billsss);
+            // billsWithStatusFalse = [...billsWithStatusFalse, bills]
+
+        });
+        console.log(999, bills);
+
+        return bills;
+    } catch (error) {
+        console.error('Error getting bills with status false:', error);
+        throw error;
+    }
+};
+
+
+
+export const updateBillByAdmin = async (uid, billsItem) => {
+    try {
+        const billQuery = query(collection(db, "bills"), where("uid", "==", uid));
+        const billSnapshot = await getDocs(billQuery);
+
+        billSnapshot.forEach(async (bill) => {
+            const data = bill.data();
+            const bills = [...data.purchase_history];
+            data.purchase_history.forEach((purchase, idx) => {
+                if (purchase.email === billsItem.email && purchase.name === billsItem.name && purchase.address === billsItem.address) {
+                    console.log(111, purchase, idx);
+                    bills[idx] = billsItem;
+                }
+            })
+            const update = { uid, purchase_history: bills }
+            await updateDoc(bill.ref, update)
+        })
+        return true;
+    } catch (error) {
+        console.log("Error: ", error.message);
         return false;
     }
 }
@@ -432,7 +830,7 @@ export const addNewUser = async (user) => {
     // console.log("username: " + typeof user.username);
     // console.log("purchase_ordered: " + user.purchase_ordered);
     // console.log("purchase_ordered: " + typeof user.purchase_ordered);
-
+    console.log("Đã gọi hàm addNewUser! ");
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, user.email, user.password);
         const userRegister = userCredential.user;
@@ -463,6 +861,7 @@ export const addNewUser = async (user) => {
  * @returns 
  */
 export const getAllUser = async () => {
+    console.log("Đã gọi hàm getAllUser! ");
     try {
         const userQuerry = query(collection(db, "users"))
         const querySnapshot = await getDocs(userQuerry);
@@ -502,6 +901,7 @@ export const updateUser = async (user) => {
     // console.log("username: " + typeof user.username);
     // console.log("purchase_ordered: " + user.purchase_ordered);
     // console.log("purchase_ordered: " + typeof user.purchase_ordered);
+    console.log("Đã gọi hàm updateUser! ");
     try {
         const userAuth = auth.currentUser;
         await updatePassword(userAuth, user.password)
@@ -535,6 +935,7 @@ export const updateUser = async (user) => {
  * @returns 
  */
 export const updateProfilebyUser = async (user) => {
+    console.log("Đã gọi hàm updateProfilebyUser! ");
     const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
     const querySnapshot = await getDocs(userQuery);
     if (!querySnapshot.empty) {
@@ -559,6 +960,7 @@ export const updateProfilebyUser = async (user) => {
  * @returns 
  */
 export const createNewProduct = async (product) => {
+    console.log("Đã gọi hàm createNewProduct! ");
     try {
         await addDoc(collection(db, "products"), {
             category_detail: product.category_detail,
@@ -586,6 +988,7 @@ export const createNewProduct = async (product) => {
  * @returns 
  */
 export const getAllProducts = async () => {
+    console.log("Đã gọi hàm getAllProducts! ");
     try {
         const productsQuerry = query(collection(db, "products"))
         const querySnapshot = await getDocs(productsQuerry);
@@ -608,6 +1011,7 @@ export const getAllProducts = async () => {
  * @param {*} productID 
  */
 export const deleteProductByID = async (productID) => {
+    console.log("Đã gọi hàm deleteProductByID! ");
     try {
         const productRef = doc(db, 'products', productID);
         await deleteDoc(productRef);
@@ -624,6 +1028,7 @@ export const deleteProductByID = async (productID) => {
  * @returns 
  */
 export const updateProductByAdmin = async (product) => {
+    console.log("Đã gọi hàm updateProductByAdmin! ");
     try {
         const productRef = doc(db, 'products', product.id);
         const productDoc = await getDoc(productRef);
@@ -650,3 +1055,5 @@ export const updateProductByAdmin = async (product) => {
         return false;
     }
 }
+
+

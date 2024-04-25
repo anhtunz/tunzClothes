@@ -7,8 +7,8 @@ import CaroselHomePage from './home/carosel';
 import ClothesList from './home/ListClothes/List_Clothes';
 import ClothesTabs from './home/ListClothes/ClothesTabs';
 import ChatDialog from './Chat';
-import { getAllCatergory, getAllChildCategory, getUserData, getTop4ProductsBySold } from "../APi";
-
+import { getTop4ProductsBySold } from "../APi";
+import { List, Modal, Flex, Col, Row, Carousel, Tag, Button, Space } from "antd";
 function HomePage() {
   const location = useLocation();
   const successState = location.state?.successLogin;
@@ -24,23 +24,36 @@ function HomePage() {
   }, [location.state]);
   const [top4Product, setTop4Product] = useState([])
   useEffect(() => {
-    async function fetchData() {
+    fetchData();
+  }, [])
+
+  const fetchData = async () => {
+    try {
       const top4Product = await getTop4ProductsBySold();
       setTop4Product(top4Product)
+    } catch (error) {
+      console.log("Error: ", error.message);
     }
-    fetchData();
-  },[])
+  }
+
+
   return (
-    <div>
+    <Flex
+      vertical
+      gap={10}
+    >
       {successState && <Notification position="top-right" />}
       <CaroselHomePage />
-      <ClothesList
-        title={"Sản phẩm bán chạy"}
-        products={top4Product}
-      />
+      <Row style={{
+        marginLeft: 30
+      }}>
+        <ClothesList
+          title={"Sản phẩm bán chạy"}
+          products={top4Product}
+        />
+      </Row>
       <ClothesTabs />
-      <ChatDialog />
-    </div>
+    </Flex>
   );
 }
 

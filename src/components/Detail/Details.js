@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react'
 import 'bootstrap/dist/css/bootstrap.css';
 import "./Details.css"
 import { Layout, Flex } from 'antd';
-import { Carousel, Image, Typography, Tag, notification } from "antd";
-import { Col, Row, Button } from 'antd';
+import { Carousel, Image, Typography, Tag, notification, message } from "antd";
+import { Col, Row, Button, Modal } from 'antd';
 import { MinusOutlined, PlusOutlined, QuestionOutlined } from "@ant-design/icons";
 import ProductTabs from './ProductTab';
 import { useParams, useLocation } from 'react-router-dom';
-import { getProductByID } from '../../APi';
-
+import { addItemToCart, getProductByID, getTop4ProductsByID } from '../../APi';
+import ClothesList from '../home/ListClothes/List_Clothes';
+import { useNavigate } from 'react-router-dom';
 
 // import ReactImageMagnify from 'react-image-magnify';
 function DetailsClothes() {
+    const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
     const productID = location.state?.productID;
@@ -28,30 +30,38 @@ function DetailsClothes() {
     ]
     const sizeData = ['S', 'M', 'L', 'XL'];
     const productColorData = ['Trắng', 'Đen', 'Xám', 'Nâu'];
-
-    const [product, setProduct] = useState({})
+    const uid = localStorage.getItem("uid");
+    const [product, setProduct] = useState(null)
     const [productImages, setProductImages] = useState(images)
     const [productColor, setProductColor] = useState(productColorData)
+    const [selectedColorTag, setSelectedColorTag] = React.useState('');
+    const [selectedSizeTag, setSelectedSizeTag] = React.useState('');
+    const [count, setCount] = useState(1);
+    const [relatedProducts, setRelatedProducts] = React.useState([]);
+    const [isLogin, setIsLogin] = useState(false)
     useEffect(() => {
-        const fetchData = async () => {
-            const productData = await getProductByID(productID1);
-            setProduct(productData);
-            if (productData && productData.pr_images) {
-                setProductImages(productData.pr_images);
-            } else {
-                setProductImages(images);
-            }
-            if (productData && productData.pr_color) {
-                setProductColor(productData.pr_color);
-            } else {
-                setProductColor(productColorData);
-            }
-        };
         fetchData();
     }, [productID1]);
-    console.log(product);
-    console.log(product.id);
-    const salePrice = parseInt((product.pr_price - (product.pr_price * product.pr_sale) / 100))
+
+    const fetchData = async () => {
+        const productData = await getProductByID(productID1);
+        setProduct(productData);
+        if (productData && productData.pr_images) {
+            setProductImages(productData.pr_images);
+        } else {
+            setProductImages(images);
+        }
+        if (productData && productData.pr_color) {
+            setProductColor(productData.pr_color);
+            setSelectedColorTag(productData.pr_color[0])
+        } else {
+            setProductColor(productColorData);
+        }
+        setSelectedSizeTag(productData.pr_sizes[0])
+    };
+    // console.log(product);
+    // console.log(product.id);
+    const salePrice = parseInt((product?.pr_price - (product?.pr_price * product?.pr_sale) / 100))
 
 
     const { Sider, Content } = Layout;
@@ -75,18 +85,14 @@ function DetailsClothes() {
     };
 
 
-    const [selectedColorTag, setSelectedColorTag] = React.useState('');
-    const [selectedSizeTag, setSelectedSizeTag] = React.useState('');
 
     const handleColorChange = (tag) => {
         const isPreviouslySelected = selectedColorTag === tag;
 
         if (!isPreviouslySelected) {
             setSelectedColorTag(tag);
-            console.log('You are interested in: ', tag);
         } else {
             setSelectedColorTag('');
-            console.log('Tag has been deselected');
         }
     };
     const handleSizeChange = (tag) => {
@@ -120,6 +126,33 @@ function DetailsClothes() {
             duration: 3
         });
     };
+
+    const increase = () => {
+        setCount(count + 1);
+    };
+    const decline = () => {
+        let newCount = count - 1;
+        if (newCount < 1) {
+            newCount = 1;
+        }
+        setCount(newCount);
+    };
+
+    // lấy 4 sản phẩm liên quan
+
+    const get4ProductsRelated = async () => {
+        try {
+            const relatedProducts = await getTop4ProductsByID(product?.category_detail)
+            setRelatedProducts(relatedProducts)
+        } catch (error) {
+            console.log("Error get4ProductsRelated: ", error.message);
+        }
+    }
+
+    useEffect(() => {
+        get4ProductsRelated()
+    }, [product?.category_detail])
+    console.log("Top 4 product Realated: ", relatedProducts);
     return (
         <Layout style={layoutStyle}>
             <Layout
@@ -159,7 +192,7 @@ function DetailsClothes() {
                             <Typography.Title
                                 strong
                                 level={3}>
-                                {product.pr_name}
+                                {product?.pr_name}
                             </Typography.Title >
                             {/* Mã + Tình Trạng */}
                             <Flex justify="flex-start" align='flex-start' gap={'small'}>
@@ -175,7 +208,17 @@ function DetailsClothes() {
                                 </Col>
                                 <Col>
                                     <Typography.Text>
-                                        Tình trạng : <strong>{product.pr_status === true ? 'Còn hàng' : 'Hết hàng'}</strong>
+                                        Tình trạng : <strong>{product?.pr_status === true ? 'Còn hàng' : 'Hết hàng'}</strong>
+                                    </Typography.Text>
+                                </Col>
+                                <Col>
+                                    <Typography.Text>
+                                        |
+                                    </Typography.Text>
+                                </Col>
+                                <Col>
+                                    <Typography.Text>
+                                        Đã bán  : <strong>{product?.pr_sold}</strong>
                                     </Typography.Text>
                                 </Col>
                             </Flex>
@@ -185,21 +228,30 @@ function DetailsClothes() {
                                     <span style={{ fontSize: '15px', fontWeight: 'bold' }}>Giá: </span>
                                 </Col>
                                 <Col>
+
                                     <Row style={{ alignItems: 'center' }}>
-                                        <span style={{ fontSize: '21px', color: 'orangered', fontWeight: 'bold' }}>
-                                            {salePrice + ",000đ"}
-                                        </span>
-                                        <span
-                                            style={{
-                                                fontSize: '25px',
-                                                textDecoration: 'line-through',
-                                                marginLeft: '20px'
-                                            }}>
-                                            {product.pr_price + ",000đ"}
-                                        </span>
-                                        <div style={{ marginLeft: '15px' }}>
-                                            <Tag style={{ height: '45%' }} color="#cd201f"> {"-" + product.pr_sale + "%"}</Tag>
-                                        </div>
+                                        {product?.pr_sale === 0 ? (
+                                            <span style={{ fontSize: '21px', color: 'orangered', fontWeight: 'bold' }}>
+                                                {salePrice + ",000đ"}
+                                            </span>
+                                        ) : (
+                                            <>
+                                                <span style={{ fontSize: '21px', color: 'orangered', fontWeight: 'bold' }}>
+                                                    {salePrice + ",000đ"}
+                                                </span>
+                                                <span
+                                                    style={{
+                                                        fontSize: '25px',
+                                                        textDecoration: 'line-through',
+                                                        marginLeft: '20px'
+                                                    }}>
+                                                    {product?.pr_price + ",000đ"}
+                                                </span>
+                                                <div style={{ marginLeft: '15px' }}>
+                                                    <Tag style={{ height: '45%' }} color="#cd201f"> {"-" + product?.pr_sale + "%"}</Tag>
+                                                </div>
+                                            </>
+                                        )}
                                     </Row>
                                 </Col>
                             </Flex>
@@ -209,11 +261,11 @@ function DetailsClothes() {
                                     <span style={{ fontSize: '15px', fontWeight: 'bold' }}>Màu sắc: </span>
                                 </Col>
                                 <Col>
-                                    {/* {product.pr_color.map((tag) => ( */}
+                                    {/* {product?.pr_color.map((tag) => ( */}
                                     {productColor.map((tag) => (
                                         <Tag.CheckableTag
                                             key={tag}
-                                            checked={selectedColorTag.includes(tag)}
+                                            checked={selectedColorTag === tag}
                                             onChange={(checked) => handleColorChange(tag, checked)}
                                         >
                                             {tag}
@@ -230,7 +282,7 @@ function DetailsClothes() {
                                     {sizeData.map((tag) => (
                                         <Tag.CheckableTag
                                             key={tag}
-                                            checked={selectedSizeTag.includes(tag)}
+                                            checked={selectedSizeTag === tag}
                                             onChange={(checked) => handleSizeChange(tag, checked)}
                                         >
                                             {tag}
@@ -245,15 +297,21 @@ function DetailsClothes() {
                                 </Col>
                                 <Col>
                                     <Row style={{ alignItems: 'center' }}>
-                                        <Button type="primary" shape="circle" icon={<MinusOutlined />} />
+                                        <Button
+                                            onClick={decline}
+                                            type="primary"
+                                            shape="circle"
+                                            icon={<MinusOutlined />}
+                                        />
                                         <span
                                             style={{
                                                 fontSize: '25px',
                                                 marginLeft: '20px'
                                             }}>
-                                            1
+                                            {count}
                                         </span>
                                         <Button
+                                            onClick={increase}
                                             style={{
                                                 marginLeft: '20px'
                                             }}
@@ -273,12 +331,50 @@ function DetailsClothes() {
                                 gap={60}
                             >
                                 <Col>
-                                    <button className="btn-addToCard">
+                                    <button
+                                        onClick={async () => {
+                                            if (uid === null) {
+                                                setIsLogin(true)
+                                            } else {
+                                                const newProduct = {
+                                                    "size": selectedSizeTag,
+                                                    "id": productID1,
+                                                    "color": selectedColorTag,
+                                                    "quantity": count
+                                                }
+                                                const result = await addItemToCart(uid, newProduct)
+                                                if (result === true) {
+                                                    message.success(`Thêm sản phẩm ${product?.pr_name} vào giỏ hàng thành công!`)
+                                                }
+                                                else {
+                                                    message.error(`Thêm sản phẩm ${product?.pr_name} vào giỏ hàng thất bại!`)
+                                                }
+                                            }
+
+                                        }}
+                                        className="btn-addToCard">
                                         THÊM VÀO GIỎ HÀNG
                                     </button>
                                 </Col>
                                 <Col>
-                                    <button className="btn-buyNow">
+                                    <button
+                                        className="btn-buyNow"
+                                        onClick={async () => {
+                                            const newProduct = {
+                                                "size": selectedSizeTag,
+                                                "id": productID1,
+                                                "color": selectedColorTag,
+                                                "quantity": count
+                                            }
+                                            const result = await addItemToCart(uid, newProduct)
+                                            if (result === true) {
+                                                navigate("/checkout")
+                                            }
+                                            else {
+                                                message.error(`Mua sản phẩm ${product?.pr_name} vào giỏ hàng thất bại!`)
+                                            }
+                                        }}
+                                    >
                                         MUA NGAY
                                     </button>
                                 </Col>
@@ -306,21 +402,29 @@ function DetailsClothes() {
                 </Content>
             </Layout>
             <ProductTabs product={product} />
-            <Flex
+            <span
                 style={{
-                    marginTop: '20px'
+                    fontSize: 30,
+                    fontWeight: 'bold',
+                    marginLeft: 10
                 }}
-                justify="center"
-                align='center'
-                gap={60}
-            >
-                <span
-                    style={{
-                        fontSize: 30,
-                        fontWeight: 'bold'
-                    }}
-                > Sản phẩm liên quan </span>
-            </Flex>
+            > Sản phẩm liên quan </span>
+            <Row>
+                <Col span={24}> <ClothesList title={""} products={relatedProducts} /> </Col>
+            </Row>
+            <Modal
+                open={isLogin}
+                okText="Đồng ý"
+                cancelText="Ở lại"
+                title="Bạn phải đăng nhập để thực hiện chức năng này!"
+                onCancel={() => {
+                    setIsLogin(false);
+                }}
+                onOk={() => {
+                    navigate("/login")
+                    setIsLogin(false);
+                }}
+            ></Modal>
         </Layout>
     )
 }

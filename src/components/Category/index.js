@@ -34,17 +34,10 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import CardMedia from '@mui/material/CardMedia';
 import { useParams } from 'react-router-dom';
-import { getAllCatergory, getAllChildCategory, getAllProductsByCategoryID, getCategoryDetailData } from '../../APi';
+import { getAllCatergory, getAllChildCategory, getAllProductsByCategoryID, getAllProductsOnSale, getCategoryDetailData } from '../../APi';
 import ClothesList from '../home/ListClothes/List_Clothes';
 import { useNavigate } from 'react-router-dom';
-
-
-const logoStyle = {
-    width: '140px',
-    height: '56px',
-    marginLeft: '-4px',
-    marginRight: '-8px',
-};
+import { Container, Stack } from '@mui/material';
 
 
 export default function CategoryPage() {
@@ -54,17 +47,37 @@ export default function CategoryPage() {
     const [priceOpen, setPriceOpen] = React.useState(true);
     const [products, setProducts] = React.useState([]);
     const [categoryDetail, setCategoryDetail] = React.useState({});
-    
-    React.useEffect(() => {
-        const fetchData = async () => {
-            const categoryData = await getAllProductsByCategoryID(params.categoryID);
-            const categoryDetailData = await getCategoryDetailData(params.categoryID);
-            setProducts(categoryData);
-            setCategoryDetail(categoryDetailData)
-        };
-        fetchData();
-    }, [params.categoryID],products)
+    // console.log("Parrams: ", params);
 
+    const fetchDataHasID = async () => {
+        const categoryData = await getAllProductsByCategoryID(params.categoryID);
+        const categoryDetailData = await getCategoryDetailData(params.categoryID);
+        setProducts(categoryData);
+        setCategoryDetail(categoryDetailData)
+    };
+
+    const fetchDataOnSale = async () => {
+        try {
+            const ProductsOnSale = await getAllProductsOnSale();
+            const CategoryDetail = {
+                'detail_name': "Sản phẩm khuyến mãi"
+            }
+            setProducts(ProductsOnSale)
+            setCategoryDetail(CategoryDetail)
+        } catch (error) {
+            console.log("Loiii onSale: ", error);
+        }
+    }
+
+    React.useEffect(() => {
+        if (params.categoryID === "onSale") {
+            fetchDataOnSale();
+        } else {
+            fetchDataHasID();
+        }
+    }, [params.categoryID])
+
+    // console.log("Products: ", products);
 
     const handleClick = () => {
         setOpen(!open);
@@ -106,21 +119,28 @@ export default function CategoryPage() {
             setValue1([value1[0], Math.max(newValue[1], value1[0] + minDistance)]);
         }
 
+
         const [minPrice, maxPrice] = value1;
-        
+        console.log(parseInt(minPrice / 1000));
+        console.log(parseInt(maxPrice / 1000));
+        // if (parseInt(minPrice / 1000) > 0 && parseInt(maxPrice / 1000) > 300) {
+        //     console.log("Nhảy vào đây");
+        // }
         const filteredProducts = products.filter(product => {
             const salePrice = parseInt(
                 (product.pr_price - (product.pr_price * product.pr_sale) / 100)
             )
-            console.log(salePrice);
-            console.log(parseInt(minPrice / 1000));
-            console.log(parseInt(maxPrice / 1000));
-            return salePrice >= parseInt(minPrice/1000) && salePrice <= parseInt(maxPrice/1000);
+            // console.log(salePrice);
+            // console.log(parseInt(minPrice / 1000));
+            // console.log(parseInt(maxPrice / 1000));
+            return salePrice >= parseInt(minPrice / 1000) && salePrice <= parseInt(maxPrice / 1000);
         });
+        filteredProducts.sort((a, b) => a.pr_price - b.pr_price);
+        setProducts(filteredProducts)
 
-        // filteredProducts.sort((a, b) => a.pr_price - b.pr_price);
-        
-        console.log(filteredProducts.length);
+
+
+        // console.log(filteredProducts.length);
     };
 
 
@@ -158,7 +178,7 @@ export default function CategoryPage() {
                     : aSalePrice === bSalePrice
                         ? 0
                         : 1;
-                
+
             } else if (event.target.value === "highLow") {
                 return aSalePrice < bSalePrice
                     ? 1
@@ -169,86 +189,6 @@ export default function CategoryPage() {
         setProducts(softProduct)
     };
 
-
-    const [clickChatBox, setClickChatBox] = React.useState(false);
-
-
-    const hanndleChatBox = () => {
-        setClickChatBox(!clickChatBox)
-    }
-    const Chatbox = () => (
-        <Collapse
-            in={clickChatBox}
-            timeout="auto"
-            unmountOnExit
-        >
-            <Box
-                height={300}
-                width={250}
-                position='fixed'
-                bottom={140}
-                right={40}
-                borderRadius={3}
-            >
-                <Card sx={{ maxWidth: 350, height: "100%" }}>
-                    <CardHeader
-                        sx={{
-                            height: 50,
-                        }}
-                        avatar={
-                            <Avatar
-                                src='https://scontent.fhan2-4.fna.fbcdn.net/v/t39.30808-1/373318937_1055633735434248_7085612218798261286_n.jpg?stp=c66.0.320.320a_dst-jpg_p320x320&_nc_cat=110&ccb=1-7&_nc_sid=5f2048&_nc_eui2=AeHLhiTOJ4xkj6n73g-4s36BPNrBnWxik2s82sGdbGKTa6gSNfI1CRgzqPg-YohAQj_8oqoLYqGqgnv8c7A7L7PP&_nc_ohc=bVBm4e3OvWUAX8pnxDM&_nc_ht=scontent.fhan2-4.fna&oh=00_AfD6knI9mXB0Zp7Xmu0sQr81m79hv9pbObsJHhHUNwYwGg&oe=660400F9'
-                                sx={{ bgcolor: 'red' }}
-                                aria-label="recipe">
-
-                            </Avatar>
-                        }
-                        action={
-                            <IconButton
-                                sx={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                onClick={hanndleChatBox}
-                                aria-label="settings"
-                            >
-                                <RemoveOutlinedIcon />
-                            </IconButton>
-                        }
-                    />
-                    <Divider />
-                    <CardContent sx={{
-                        height: 200,
-                        maxHeight: 200
-                    }}>
-                        <Typography gutterBottom variant="h5" component="div">
-                            Lizard
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Lizards are a widespread group of squamate reptiles, with over 6,000
-                            species, ranging across all continents except Antarctica
-                        </Typography>
-                    </CardContent>
-                    <CardActions
-                        sx={{
-                            maxHeight: 50,
-                        }}
-                    >
-                        <TextField
-                            hiddenLabel
-                            id="filled-hidden-label-small"
-                            variant="standard"
-                            size="small"
-                        />
-                        <IconButton>
-                            <SendIcon />
-                        </IconButton>
-                    </CardActions>
-                </Card>
-            </Box>
-        </Collapse>
-
-    )
 
     const navigate = useNavigate();
     const onClickItem = (item) => {
@@ -276,22 +216,27 @@ export default function CategoryPage() {
     return (
         <>
             <CssBaseline />
-            <Grid container sx={{ height: { xs: '100%', sm: '100dvh' } }}>
-                <Grid
-                    item
-                    xs={12}
-                    sm={5}
-                    lg={4}
+            <Stack sx={{ display: 'flex', }} direction='row' >
+                <Stack
+                    width={'15%'}
                     sx={{
-                        display: { xs: 'none', md: 'flex' },
-                        flexDirection: 'column',
-                        borderRight: { sm: 'none', md: '1px solid' },
-                        borderColor: { sm: 'none', md: 'divider' },
-                        alignItems: 'start',
-                        pt: 4,
-                        px: 5,
-                        gap: 4,
+                        mr: '5%',
+                        p: '1%'
                     }}
+                // item
+                // xs={2}
+                // sm={5}
+                // lg={4}
+                // sx={{
+                //     display: { xs: 'none', md: 'flex' },
+                //     flexDirection: 'column',
+                //     borderRight: { sm: 'none', md: '1px solid' },
+                //     borderColor: { sm: 'none', md: 'divider' },
+                //     alignItems: 'start',
+                //     pt: 4,
+                //     px: 5,
+                //     gap: 4,
+                // }}
                 >
                     <Box>
                         <Typography component="div" variant="h5">
@@ -352,7 +297,7 @@ export default function CategoryPage() {
                                                                     <ArrowRightRoundedIcon />
                                                                 </ListItemIcon>
                                                                 <ListItemText
-                                                                    primary={detail.detail_name}
+                                                                    primary={detail?.detail_name}
                                                                 />
                                                             </ListItemButton>
                                                         ))
@@ -397,22 +342,24 @@ export default function CategoryPage() {
                             />
                         </Collapse>
                     </Box>
-                </Grid>
-                <Grid
-                    item
-                    sm={12}
-                    md={7}
-                    lg={8}
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        maxWidth: '100%',
-                        width: '100%',
-                        alignItems: 'start',
-                        pt: { xs: 2, sm: 2 },
-                        px: { xs: 2, sm: 2 },
-                        gap: { xs: 4, md: 8 },
-                    }}
+                </Stack>
+                <Stack
+                    width={'80%'}
+                // xs={10}
+                // item
+                // sm={12}
+                // md={7}
+                // lg={8}
+                // sx={{
+                //     display: 'flex',
+                //     flexDirection: 'column',
+                //     maxWidth: '100%',
+                //     width: '100%',
+                //     alignItems: 'start',
+                //     pt: { xs: 2, sm: 2 },
+                //     px: { xs: 2, sm: 2 },
+                //     gap: { xs: 4, md: 8 },
+                // }}
                 >
                     <Box
                         sx={{
@@ -436,10 +383,10 @@ export default function CategoryPage() {
                                 style={{
                                     fontWeight: "bold"
                                 }}
-                            >{categoryDetail.detail_name}</Typography>
+                            >{categoryDetail?.detail_name}</Typography>
                             <Typography
                                 sx={{
-                                    ml:3
+                                    ml: 3
                                 }}
                             >Số lượng: {products.length}</Typography>
                         </Box>
@@ -500,13 +447,12 @@ export default function CategoryPage() {
                                     title={""}
                                     products={products}
                                 />
-
                             </Grid>
                         </Box>
                     </Box>
-                </Grid>
-            </Grid>
-            <Box
+                </Stack>
+            </Stack>
+            {/* <Box
                 position='fixed'
                 bottom={80}
                 right={80}
@@ -523,8 +469,8 @@ export default function CategoryPage() {
                     <ChatBubbleOutlinedIcon sx={{ mr: 1 }} />
                     Chat
                 </Fab>
-            </Box>
-            <Chatbox />
+            </Box> */}
+            {/* <Chatbox /> */}
         </>
     );
 }

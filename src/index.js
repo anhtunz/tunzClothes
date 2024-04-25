@@ -8,7 +8,6 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 // import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 // import "@fortawesome/fontawesome-free/css/all.min.css";
 import MenClothes from './components/men/MenClothes';
-import WomenClothes from './components/women/WomenClothes';
 import HomePage from './components/Home';
 import LoginPage from './layout/login/login';
 import SignUpPage from './layout/signup';
@@ -24,6 +23,9 @@ import ChangePass from './components/profile/ChangePass';
 import ChangeProfilePage from './components/profile/ChangeProfile';
 import AddProductPage from './admin/AddProduct';
 import ManageProductPage from './admin/ManageProduct';
+import CheckoutPage from './components/Checkout';
+import HistoryPurchasePage from './components/profile/HistoryPurchase';
+import ManageOrderPage from './admin/ManageOrder';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -37,18 +39,22 @@ root.render(
           />
           <Route path='collection/:categoryID' element={<CategoryPage />}></Route>
           <Route path='search/:query' element={<SearchPage />}></Route>
+          <Route index element={<HomePage />} />
           <Route path='products/:productID' element={<DetailsClothes />}></Route>
-          {/* <Route index element={<HomePage />} /> */}
           <Route path='user' element={<ProfilePage />}>
             <Route path='change-pass' index element={<ChangePass />}></Route>
+            <Route path='change-pass' index element={<ChangePass />}></Route>
+            <Route path='history-purchase' element={<HistoryPurchasePage />}></Route>
           </Route>
           <Route path='user/profile' element={<ChangeProfilePage />} ></Route>
+          <Route path='checkout' element={<CheckoutPage />} ></Route>
         </Route>
         <Route path='manage-page' element={<AdminLayout />}>
           <Route path='add-new-user' element={<AddUserPage />} ></Route>
           <Route path='manage-user' element={<ManageUserPage />} ></Route>
           <Route path='add-new-product' element={<AddProductPage />} ></Route>
           <Route path='manage-product' element={<ManageProductPage />} ></Route>
+          <Route path='manage-order' element={<ManageOrderPage />} ></Route>
         </Route>
 
         <Route path='login' element={<LoginPage />}></Route>
