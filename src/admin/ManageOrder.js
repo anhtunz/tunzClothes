@@ -72,16 +72,26 @@ function ManageOrderPage() {
       ),
     },
     {
-      title: 'Tinh trnag',
+      title: 'Tình trạng',
       dataIndex: 'status',
       key: 'status',
       render: status => status ? 'True' : 'False',
     },
     {
+      title: 'Số điện thoại',
+      dataIndex: 'tel',
+      key: 'tel',
+    },
+    {
+      title: 'Địa chỉ',
+      dataIndex: 'address',
+      key: 'address',
+    },
+    {
       key: "13",
       title: "Thao tác",
       fixed: 'right',
-      with: 300,
+      width: 250,
       render: (record) => {
         return (
           <>
@@ -113,48 +123,7 @@ function ManageOrderPage() {
         );
       },
     },
-    // {
-    //   title: 'Email',
-    //   dataIndex: 'purchase_history',
-    //   key: 'email',
-    //   render: (purchaseHistory) => (
-    //     <ul>
-    //       {purchaseHistory.map((historyItem, index) => (
-    //         <li key={index}>
-    //           {historyItem.email}
-    //         </li>
-    //       ))}
-    //     </ul>
-    //   ),
-    // },
-    // {
-    //   title: 'Name',
-    //   dataIndex: 'purchase_history',
-    //   key: 'name',
-    //   render: (purchaseHistory) => (
-    //     <ul>
-    //       {purchaseHistory.map((historyItem, index) => (
-    //         <li key={index}>
-    //           {historyItem.name}
-    //         </li>
-    //       ))}
-    //     </ul>
-    //   ),
-    // },
-    // {
-    //   title: 'Name',
-    //   dataIndex: 'purchase_history',
-    //   key: 'name',
-    //   render: (purchaseHistory) => (
-    //     <ul>
-    //       {purchaseHistory.map((historyItem, index) => (
-    //         <li key={index}>
-    //           {historyItem.name}
-    //         </li>
-    //       ))}
-    //     </ul>
-    //   ),
-    // },
+
   ];
 
 
@@ -193,7 +162,7 @@ function ManageOrderPage() {
       </Row>
       <Table
         scroll={{
-          x: 2000,
+          x: 3000,
         }}
         key={"table"}
         loading={loading}

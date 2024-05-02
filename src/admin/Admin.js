@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    MessageOutlined,
+    BarChartOutlined,
     UserOutlined,
     PayCircleOutlined,
     HomeOutlined,
     ProductOutlined,
     UserAddOutlined,
     UserSwitchOutlined,
+    HistoryOutlined
 } from '@ant-design/icons';
-import { Layout, Menu, Button, theme } from 'antd';
+import { Layout, Menu, Button, theme, Image } from 'antd';
 import { Outlet, Links } from 'react-router';
 import { useNavigate } from 'react-router-dom';
 import { getUserData } from '../APi';
@@ -102,6 +103,16 @@ const AdminLayout = () => {
 
                             ]
                         },
+                        {
+                            key: 'manage-success-bills',
+                            icon: <HistoryOutlined />,
+                            label: 'Lịch sử mua hàng',
+                        },
+                        {
+                            key: 'manage-statistical',
+                            icon: <BarChartOutlined />,
+                            label: 'Thống kê',
+                        },
 
                     ]}
                 />
@@ -143,18 +154,45 @@ const AdminLayout = () => {
                     style={{
                         padding: 0,
                         background: colorBgContainer,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                     }}
                 >
-                    <Button
-                        type="text"
-                        icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                        onClick={() => setCollapsed(!collapsed)}
-                        style={{
-                            fontSize: '16px',
-                            width: 64,
-                            height: 64,
-                        }}
-                    />
+                    <div>
+                        <Button
+                            type="text"
+                            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            onClick={() => setCollapsed(!collapsed)}
+                            style={{
+                                fontSize: '16px',
+                                width: 64,
+                                height: 64,
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <Image
+                            style={{
+                                cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                                navigate('/')
+                            }}
+                            preview={false}
+                            height={70}
+                            src={'https://firebasestorage.googleapis.com/v0/b/tunztunzzclothing.appspot.com/o/logo-Photoroom.png-Photoroom.png?alt=media&token=41f23438-d0f9-4b0d-9286-704bf35a9e63'}
+                        />
+                    </div>
+                    <div style={{ marginRight: 10 }}>
+                        <Button
+                            onClick={() => {
+                                navigate('/logout')
+                            }}
+                            type='primary'
+                            danger
+                        >Đăng xuất</Button>
+                    </div>
                 </Header>
                 <Content
                     style={{

@@ -40,7 +40,6 @@ function ProductTabs({ product }) {
                 centered
                 items={items}
             />
-
         </div>
     )
 }

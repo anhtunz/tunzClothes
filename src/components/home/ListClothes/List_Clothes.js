@@ -113,7 +113,7 @@ export default function ClothesList({ title, products }) {
                   <Rate
                     disabled
                     allowHalf
-                    value={product.pr_rating}
+                    value={parseFloat(product?.pr_rating)}
                   >
                   </Rate>,
                   < ShoppingCartOutlined

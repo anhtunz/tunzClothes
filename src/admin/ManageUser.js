@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Flex, Col, Row, Table, Image, Tag, Button, message, Modal, Input, Select, Avatar } from 'antd'
-import { getAllUser, updateUser } from '../APi'
+import { deleteUserByUID, getAllUser, updateUser } from '../APi'
 import {
     EditOutlined, DeleteOutlined
 } from '@ant-design/icons';
@@ -15,7 +15,7 @@ function ManageUserPage() {
     const [isEdditing, setEdditing] = useState(false);
     const [editUser, setEditUser] = useState(null);
     const [imageUrl, setImageUrl] = useState("");
-
+    const [oldPass, setOldPass] = useState("")
     useEffect(() => {
         setLoading(true);
         fetchUserData();
@@ -118,20 +118,47 @@ function ManageUserPage() {
     ];
 
 
+    const sendEmailToUser = (password) => {
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                "emailHost": "anhtuanmk62@gmail.com",
+                "password": "nbmb mmbg svpk oxzm",
+                "displayName": "TunzClothes Notification",
+                "toMail": "anhtuanmk62@gmail.com",
+                "title": "Thông báo từ TunzClothes",
+                "body": `<p><strong>Thông báo thay đổi mật khẩu: </strong></p><p>Mật khẩu của bạn đã được thay đổi thành: ${password}</p>`
+            })
+        };
+        fetch('https://exciting-snail-new.ngrok-free.app/api/send-mail', requestOptions)
+            .then(response => response.json())
+            .catch(err => {
+                console.log(err);
+            });
+    }
+
     const onDeleteUser = (record) => {
         Modal.confirm({
             title: `Bạn có chắc chắn muốn xóa người dùng "${record.username}" này?`,
-            onOk: () => {
-                message.success("Xóa người dùng thành công")
+            onOk: async () => {
+                const result = await deleteUserByUID(record.uid);
+                if (result === true) {
+                    message.success("Xóa người dùng thành công")
+                    await fetchUserData();
+                }
+                else {
+                    message.err("Xóa người dùng thất bại!")
+                }
             }
         })
-        console.log(record);
     }
 
     const onEditUser = (record) => {
         setEdditing(true)
         setEditUser({ ...record })
         setImageUrl(record.image)
+        setOldPass(record.password)
     }
 
     const handleImageChange = async (e) => {
@@ -197,9 +224,16 @@ function ManageUserPage() {
                     setEdditing(false)
                 }}
                 onOk={async () => {
+                    console.log("Password cu: ", oldPass);
                     setEdditing(false);
                     const today = new Date();
                     const updatedUser = { ...editUser, updated_time: today };
+                    if (updatedUser.password !== oldPass) {
+                        sendEmailToUser(updatedUser.password)
+                    }
+                    else {
+                        // console.log("password khong thay doi");
+                    }
                     const result = await updateUser(updatedUser);
                     setEditUser(updatedUser);
                     await fetchUserData();

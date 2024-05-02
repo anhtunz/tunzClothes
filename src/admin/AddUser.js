@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Flex, Col, Row, Form, Input, Select, Button, message } from 'antd'
 import { addNewUser } from '../APi';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
@@ -30,7 +30,7 @@ function AddUserPage() {
         user.password = values.password
         user.username = values.username
         user.role = values.role
-        user.description = values.description
+        user.description = descriptionText
         user.created_time = today
         user.updated_time = today
         const result = await addNewUser(user)
@@ -50,6 +50,15 @@ function AddUserPage() {
         form.resetFields();
         message.info('Hủy thành công')
     };
+
+
+    // Khai báo CKEditor trong TextArea
+    const [descriptionText, setDescriptionText] = useState('')
+    const handleDescriptionChange = (event, editor) => {
+        const data = editor.getData();
+        setDescriptionText(data)
+    };
+
     return (
         <Flex
             gap={10}
@@ -160,10 +169,10 @@ function AddUserPage() {
                             name="description"
                             label="Mô tả: "
                         >
-                            <Input.TextArea
-                                showCount
-                                maxLength={300}
-                                style={{ height: 120, resize: 'none' }}
+                            <CKEditor
+                                editor={ClassicEditor}
+                                data=""
+                                onChange={handleDescriptionChange}
                             />
                         </Form.Item>
                     </Col>

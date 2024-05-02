@@ -270,8 +270,8 @@ function AppCart() {
                     mode="vertical"
                     items={[
                         {
-                            label: "Đăng xuất",
-                            key: "logout"
+                            label: "Đăng nhập",
+                            key: "login"
                         },
                     ]}
                 />

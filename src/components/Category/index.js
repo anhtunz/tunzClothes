@@ -218,7 +218,7 @@ export default function CategoryPage() {
             <CssBaseline />
             <Stack sx={{ display: 'flex', }} direction='row' >
                 <Stack
-                    width={'15%'}
+                    width={'20%'}
                     sx={{
                         mr: '5%',
                         p: '1%'
@@ -344,7 +344,7 @@ export default function CategoryPage() {
                     </Box>
                 </Stack>
                 <Stack
-                    width={'80%'}
+                    width={'75%'}
                 // xs={10}
                 // item
                 // sm={12}

@@ -1,6 +1,32 @@
 import { db, auth } from "../Services/firebase";
 import { collection, getDocs, where, query, doc, getDoc, orderBy, limit, updateDoc, onSnapshot, addDoc, deleteDoc, increment, arrayUnion } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updatePassword, updateEmail } from "firebase/auth";
+
+/**
+ * Lấy ra tất cả người dùng trong hệ thống
+ * @returns 
+ */
+export const getAllUsers = async () => {
+    console.log("Đã gọi hàm getAllUsers! ");
+    try {
+        const userQuerry = query(collection(db, "users"))
+        console.log('Câu truy vấn:', userQuerry.path);
+        const querySnapshot = await getDocs(userQuerry);
+        if (!querySnapshot.empty) {
+            const userData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            return userData;
+        } else {
+            return null;
+        }
+    } catch (error) {
+
+    }
+}
+
+
 /**
  * Lấy thông tin người dùng đăng nhập
  * @returns 
@@ -27,6 +53,67 @@ export const getUserData = async (uid) => {
         return null;
     }
 }
+
+/**
+ * cập nhật trạng thái khi người dùng đăng nhập 
+ * @param {*} uid 
+ * @returns 
+ */
+export const updateUserLogin = async (uid) => {
+    try {
+        const userRef = collection(db, 'users');
+        const q = query(userRef, where('uid', '==', uid));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.size === 1) {
+            const userDocRef = querySnapshot.docs[0].ref;
+
+            await updateDoc(userDocRef, {
+                status: '1'
+            });
+
+            console.log('Đã cập nhật trạng thái của người dùng có uid', uid);
+            return true;
+        } else {
+            console.log('Không tìm thấy người dùng với uid', uid);
+            return false;
+        }
+    } catch (error) {
+        console.error('Cập nhật trạng thái người dùng thất bại', error.message);
+        return false;
+    }
+};
+
+
+/**
+ * Cập nhật trạng thái khi người dùng đăng xuất 
+ * @param {*} uid 
+ * @returns 
+ */
+export const updateUserLogout = async (uid) => {
+    try {
+        const userRef = collection(db, 'users');
+        const q = query(userRef, where('uid', '==', uid));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.size === 1) {
+            const userDocRef = querySnapshot.docs[0].ref;
+
+            await updateDoc(userDocRef, {
+                status: '0'
+            });
+
+            console.log('Đã cập nhật trạng thái của người dùng có uid', uid);
+            return true;
+        } else {
+            console.log('Không tìm thấy người dùng với uid', uid);
+            return false;
+        }
+    } catch (error) {
+        console.error('Cập nhật trạng thái người dùng thất bại', error.message);
+        return false;
+    }
+};
 
 /**
  * Lấy ra tất cả các trường trong bảng Category
@@ -428,7 +515,13 @@ export const decreaseQuantityProductInCart = async (uid, pr_id, pr_color, pr_siz
     }
 };
 
-
+/**
+ * Xóa sản phẩm trong giỏ hàng của người dùng
+ * @param {*} uid 
+ * @param {*} pr_id 
+ * @param {*} pr_color 
+ * @param {*} pr_size 
+ */
 export const deleteProductInCart = async (uid, pr_id, pr_color, pr_size) => {
     console.log("Đã gọi hàm deleteProductInCart! ");
     try {
@@ -541,8 +634,6 @@ export const changeUserPassword = async (password) => {
     }
 }
 
-
-
 /**
  * Tăng số lượt bán cho sản phẩm
  * @param {*} productId 
@@ -652,6 +743,11 @@ export const updateProductbyUser = async (product) => {
 }
 
 
+/**
+ * Hiển thị bình luận của người dùng về sản phẩm
+ * @param {*} productID 
+ * @returns 
+ */
 export const getCommentItemByproductID = async (productID) => {
     console.log("Đã gọi hàm getCommentItemByproductID! ");
     try {
@@ -742,8 +838,10 @@ export const updateBillWithPurchaseHistory = async (uid, newPurchaseHistory) => 
     }
 }
 
-
-
+/**
+ * Lấy ra đơn hàng cần được duyệt
+ * @returns 
+ */
 export const getUnprocessedBills = async () => {
     try {
         const billQuery = collection(db, 'bills');
@@ -753,28 +851,39 @@ export const getUnprocessedBills = async () => {
 
         querySnapshot.forEach(doc => {
             const billData = doc.data();
-            // Duyệt qua mảng purchase_history của mỗi hóa đơn
-            // billData.purchase_history.forEach(history => {
-            //     if (history.status === false) {
-            //         billsWithStatusFalse.push({
-            //             uid: billData.uid,
-            //             ...billData
-            //         });
-            //         // Nếu phần tử trong purchase_history có status = false, thêm hóa đơn vào mảng kết quả
-            //     }
-            // });
-            // console.log(111, billData);
 
             const billsss = billData.purchase_history
                 .filter(purchase => purchase.status === false)
                 .map(purchase => ({ ...purchase, uid: billData.uid }));
 
             bills.push(...billsss);
-            // billsWithStatusFalse = [...billsWithStatusFalse, bills]
-
         });
-        console.log(999, bills);
+        return bills;
+    } catch (error) {
+        console.error('Error getting bills with status false:', error);
+        throw error;
+    }
+};
 
+/**
+ * Lấy ra đơn hàng đã được duyệt
+ * @returns 
+ */
+export const getSuccessfulBills = async () => {
+    try {
+        const billQuery = collection(db, 'bills');
+        const querySnapshot = await getDocs(billQuery);
+
+        const bills = [];
+
+        querySnapshot.forEach(doc => {
+            const billData = doc.data();
+
+            const billsss = billData.purchase_history
+                .filter(purchase => purchase.status === true)
+                .map(purchase => ({ ...purchase, uid: billData.uid }));
+            bills.push(...billsss);
+        });
         return bills;
     } catch (error) {
         console.error('Error getting bills with status false:', error);
@@ -783,7 +892,12 @@ export const getUnprocessedBills = async () => {
 };
 
 
-
+/**
+ * Duyệt đơn hàng cho người dùng
+ * @param {*} uid 
+ * @param {*} billsItem 
+ * @returns 
+ */
 export const updateBillByAdmin = async (uid, billsItem) => {
     try {
         const billQuery = query(collection(db, "bills"), where("uid", "==", uid));
@@ -1021,6 +1135,33 @@ export const deleteProductByID = async (productID) => {
         return false;
     }
 }
+
+/**
+ * Xóa người dùng bởi ADMIN
+ * @param {*} uid 
+ * @returns 
+ */
+export const deleteUserByUID = async (uid) => {
+    console.log("Đã gọi hàm deleteUserByUID! ");
+    try {
+        const userRef = collection(db, 'users');
+        const q = query(userRef, where('uid', '==', uid));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.size === 1) {
+            const userDocRef = querySnapshot.docs[0].ref;
+            await deleteDoc(userDocRef);
+            console.log('Đã xóa người dùng có uid', uid);
+            return true;
+        } else {
+            console.log('Không tìm thấy người dùng với uid', uid);
+            return false;
+        }
+    } catch (error) {
+        console.error('Lỗi khi xóa người dùng:', error);
+        return false;
+    }
+};
 
 /**
  * Chỉnh sửa sản phẩm bởi admin

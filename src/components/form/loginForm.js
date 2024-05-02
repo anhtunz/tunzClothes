@@ -13,6 +13,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from "react-router-dom";
 import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import { updateUserLogin } from '../../APi';
 function LoginForm() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -49,11 +50,12 @@ function LoginForm() {
 
         try {
             signInWithEmailAndPassword(auth, email, pass)
-                .then((userCredential) => {
+                .then(async (userCredential) => {
                     const uid = userCredential.user.uid
                     setShowNotification(true)
                     toast('Đăng nhập thành công', { type: successType });
                     localStorage.setItem("uid", uid)
+                    await updateUserLogin(uid)
                     navigate("/", { state: { successLogin: true } })
                 })
                 .catch((error) => {

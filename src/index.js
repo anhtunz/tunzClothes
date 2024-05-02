@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-
+import '../src/fontwaesome/css/all.css'
 // import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 // import "@fortawesome/fontawesome-free/css/all.min.css";
 import MenClothes from './components/men/MenClothes';
@@ -26,6 +26,8 @@ import ManageProductPage from './admin/ManageProduct';
 import CheckoutPage from './components/Checkout';
 import HistoryPurchasePage from './components/profile/HistoryPurchase';
 import ManageOrderPage from './admin/ManageOrder';
+import ManageSuccessfulBillsOrderPage from './admin/ManageSuccessfulOrders';
+import ManageStatisticalPage from './admin/ManageStatistical';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -55,6 +57,8 @@ root.render(
           <Route path='add-new-product' element={<AddProductPage />} ></Route>
           <Route path='manage-product' element={<ManageProductPage />} ></Route>
           <Route path='manage-order' element={<ManageOrderPage />} ></Route>
+          <Route path='manage-success-bills' element={<ManageSuccessfulBillsOrderPage />} ></Route>
+          <Route path='manage-statistical' element={<ManageStatisticalPage />} ></Route>
         </Route>
 
         <Route path='login' element={<LoginPage />}></Route>

@@ -4,6 +4,10 @@ import { Link, useLocation } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { addPurchaseHistoryUsers, getCartItemByUID, getProductByID, increaseSoldCountOfProduct } from '../APi';
 import { useNavigate } from 'react-router-dom';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
+import { storage } from '../Services/firebase';
+
 function CheckoutPage() {
     const navigate = useNavigate();
     const [form] = Form.useForm();
@@ -12,7 +16,7 @@ function CheckoutPage() {
     const uid = localStorage.getItem("uid");
     const [userCart, setUserCart] = useState([]);
     const [cartFullData, setCartFullData] = useState([]);
-
+    const [imageUrl, setImageUrl] = useState("");
     const getCartData = async () => {
         if (uid !== null) {
             try {
@@ -52,6 +56,35 @@ function CheckoutPage() {
         }
     }, [userCart]);
 
+
+    const handleImageChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                setImageUrl(reader.result)
+            }
+            try {
+                const imageRef = ref(storage, `bills/${file.name + uuidv4()}`)
+                const uploadImage = uploadBytesResumable(imageRef, file);
+                await uploadImage;
+                const imageUrl = await getDownloadURL(uploadImage.snapshot.ref);
+                // if (imageUrl) {
+                //     setUserData({
+                //         ...userData, image: imageUrl
+                //     })
+                //     await updateProfileImage(userData.uid, imageUrl)
+                // }
+                // else {
+                //     console.error('Error: downloadURL is undefined');
+                // }
+            } catch (error) {
+                console.error('Error uploading image to storage:', error);
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
     console.log("CartFullData: ", cartFullData);
     const onChange = (e) => {
         setValue(e.target.value);
@@ -64,16 +97,29 @@ function CheckoutPage() {
     };
     const showBankInfomation = () => {
         return (
-            <Card
-                hoverable
-                style={{
-                    width: 240,
-                    marginLeft: 30
-                }}
-                cover={<img alt="example" src="https://firebasestorage.googleapis.com/v0/b/tunzclothesbackup.appspot.com/o/bankinfo.jpg?alt=media&token=2f06287b-ccdc-4c74-a4be-2d7b1a28088c" />}
-            >
-                <Card.Meta title="STK: 30556789999" description="Ngân hàng: MBBank" />
-            </Card>
+            <Flex gap={20}>
+                <Card
+                    hoverable
+                    style={{
+                        width: 240,
+                        marginLeft: 30
+                    }}
+                    cover={<img alt="example" src="https://firebasestorage.googleapis.com/v0/b/tunzclothesbackup.appspot.com/o/bankinfo.jpg?alt=media&token=2f06287b-ccdc-4c74-a4be-2d7b1a28088c" />}
+                >
+                    <Card.Meta title="STK: 30556789999" description="Ngân hàng: MBBank" />
+                </Card>
+                <Col>
+                    <Input
+                        style={{
+                            height: 50,
+                            marginBottom: 20
+                        }}
+                        onChange={handleImageChange}
+                        type={"file"}
+                    ></Input>
+                    <Image src={imageUrl} width={300} height={400}></Image>
+                </Col>
+            </Flex>
         )
     }
     let totalPrice = 0;

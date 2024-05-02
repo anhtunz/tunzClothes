@@ -65,7 +65,7 @@ function SignUpForm() {
                 image: "",
                 password: pass,
                 role: "USER",
-                status: "",
+                status: "0",
                 updated_time: today,
                 username: "",
                 uid: user.uid,

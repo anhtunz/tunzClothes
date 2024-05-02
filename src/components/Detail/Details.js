@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import 'bootstrap/dist/css/bootstrap.css';
 import "./Details.css"
 import { Layout, Flex } from 'antd';
-import { Carousel, Image, Typography, Tag, notification, message } from "antd";
+import { Carousel, Image, Typography, Tag, notification, message, Rate } from "antd";
 import { Col, Row, Button, Modal } from 'antd';
 import { MinusOutlined, PlusOutlined, QuestionOutlined } from "@ant-design/icons";
 import ProductTabs from './ProductTab';
@@ -221,6 +221,17 @@ function DetailsClothes() {
                                         Đã bán  : <strong>{product?.pr_sold}</strong>
                                     </Typography.Text>
                                 </Col>
+                            </Flex>
+                            <Flex justify="flex-start" align='flex-start' gap={20} >
+                                <Typography.Text>
+                                    Đánh giá :
+                                </Typography.Text>
+                                <Rate
+                                    disabled
+                                    allowHalf
+                                    value={parseFloat(product?.pr_rating)}
+                                >
+                                </Rate>
                             </Flex>
                             {/* Giá */}
                             <Flex justify="flex-start" align='center' gap={100}>
